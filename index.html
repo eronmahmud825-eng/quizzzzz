@@ -298,34 +298,9 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
       <input type="password" id="rgPass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"/>
       <div class="fg-msg" id="rgPass2Msg"></div>
     </div>
-    <button class="btn btn-gold" id="rgBtn" onclick="doRegister()" style="width:100%;margin-top:6px">ناردنی کۆدی پشتڕاستکردنەوە</button>
+    <button class="btn btn-gold" id="rgBtn" onclick="doRegister()" style="width:100%;margin-top:6px">خۆتۆمارکردن</button>
     <div style="text-align:center;margin-top:14px">
       <button class="btn-link" onclick="go('s-login')">هەژمارت هەیە؟ چوونەژوورەوە</button>
-    </div>
-  </div>
-</div>
-
-<!-- VERIFY -->
-<div id="s-verify" class="screen">
-  <button class="bk" onclick="go('s-register')">← گەڕانەوە</button>
-  <div class="card">
-    <h2>📲 پشتڕاستکردنەوە</h2>
-    <div class="sub">کۆدی ٤ژمارەیی بنووسە کە نێردراوە بۆ <span id="vrPhoneShow" style="color:var(--gold)"></span></div>
-    <div class="dev-box">
-      <span class="dev-tag">DEV MODE — SMS ڕاستەقینە هێشتا نەبەستراوەتەوە</span>
-      <div>لە قۆناغی داهاتوودا ئەم کۆدە بەم شێوەیە بۆ مۆبایلەکەت دەنێردرێت. ئێستا بۆ تاقیکردنەوە لێرەدا نیشان دەدرێت:</div>
-      <div class="dcode" id="vrDevCode">— — — —</div>
-    </div>
-    <div class="otp-row">
-      <input maxlength="1" inputmode="numeric" id="otp0" onkeyup="otpMove(0,event)"/>
-      <input maxlength="1" inputmode="numeric" id="otp1" onkeyup="otpMove(1,event)"/>
-      <input maxlength="1" inputmode="numeric" id="otp2" onkeyup="otpMove(2,event)"/>
-      <input maxlength="1" inputmode="numeric" id="otp3" onkeyup="otpMove(3,event)"/>
-    </div>
-    <div class="fg-msg" id="vrMsg" style="text-align:center;margin-bottom:8px"></div>
-    <button class="btn btn-gold" id="vrBtn" onclick="doVerify()" style="width:100%;margin-top:6px">پشتڕاستکردنەوە و دەستپێکردن</button>
-    <div style="text-align:center;margin-top:12px">
-      <button class="btn-link" onclick="resendCode()">کۆدەکە دووبارە بنێرەوە</button>
     </div>
   </div>
 </div>
@@ -482,8 +457,6 @@ async function loadHomeMiniStats(phone) {
 // ═══════════════════════════════════════════════════════
 //  REGISTER FLOW
 // ═══════════════════════════════════════════════════════
-let pendingReg = null; // {phone, username, passHash, code}
-
 function clearErr(ids) { ids.forEach(id => { document.getElementById(id).textContent = ""; }); }
 
 async function doRegister() {
@@ -506,65 +479,22 @@ async function doRegister() {
     const existing = await fbGet("/users/" + phone);
     if (existing) {
       document.getElementById("rgPhoneMsg").textContent = "ئەم ژمارەیە پێشتر تۆمارکراوە";
-      btn.disabled = false; btn.textContent = "ناردنی کۆدی پشتڕاستکردنەوە"; return;
+      btn.disabled = false; btn.textContent = "خۆتۆمارکردن"; return;
     }
     const passHash = await sha256(pass);
-    const code = String(Math.floor(1000 + Math.random() * 9000));
-    pendingReg = { phone, username: name, passHash, code };
-    // store pending verification server-side too, with short "expiry" client-checked
-    await fbPut("/pending_verify/" + phone, { code, username: name, passHash, t: Date.now() });
-
-    document.getElementById("vrPhoneShow").textContent = "+" + phone;
-    document.getElementById("vrDevCode").textContent = code.split("").join(" ");
-    ["otp0","otp1","otp2","otp3"].forEach(id => document.getElementById(id).value = "");
-    document.getElementById("vrMsg").textContent = "";
-    go("s-verify");
-    document.getElementById("otp0").focus();
+    const userObj = {
+      username: name, passHash,
+      trophies: 0, gamesPlayed: 0, wins: 0, history: [], createdAt: Date.now()
+    };
+    await fbPut("/users/" + phone, userObj);
+    await saveSession({ phone, username: name });
+    notif("هەژمار دروستکرا — بەخێربێیت " + name + "! 🎉", "suc");
+    applySessionUI();
+    go("s-home");
   } catch (e) {
     notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
   }
-  btn.disabled = false; btn.textContent = "ناردنی کۆدی پشتڕاستکردنەوە";
-}
-
-async function resendCode() {
-  if (!pendingReg) return;
-  const code = String(Math.floor(1000 + Math.random() * 9000));
-  pendingReg.code = code;
-  await fbPut("/pending_verify/" + pendingReg.phone, {
-    code, username: pendingReg.username, passHash: pendingReg.passHash, t: Date.now()
-  });
-  document.getElementById("vrDevCode").textContent = code.split("").join(" ");
-  notif("کۆدێکی نوێ نێردرا (DEV MODE)", "inf");
-}
-
-async function doVerify() {
-  if (!pendingReg) { go("s-register"); return; }
-  const entered = ["otp0","otp1","otp2","otp3"].map(id => document.getElementById(id).value).join("");
-  if (entered.length < 4) { document.getElementById("vrMsg").textContent = "هەموو ٤ ژمارەکە بنووسە"; return; }
-
-  const btn = document.getElementById("vrBtn");
-  btn.disabled = true; btn.textContent = "⏳ پشتڕاستکردنەوە...";
-  try {
-    const pend = await fbGet("/pending_verify/" + pendingReg.phone);
-    if (!pend || pend.code !== entered) {
-      document.getElementById("vrMsg").textContent = "کۆدەکە هەڵەیە";
-      btn.disabled = false; btn.textContent = "پشتڕاستکردنەوە و دەستپێکردن"; return;
-    }
-    const userObj = {
-      username: pend.username, passHash: pend.passHash,
-      trophies: 0, gamesPlayed: 0, wins: 0, history: [], createdAt: Date.now()
-    };
-    await fbPut("/users/" + pendingReg.phone, userObj);
-    await fbDelete("/pending_verify/" + pendingReg.phone);
-    await saveSession({ phone: pendingReg.phone, username: pend.username });
-    pendingReg = null;
-    notif("هەژمار دروستکرا — بەخێربێیت! 🎉", "suc");
-    applySessionUI();
-    go("s-dashboard");
-  } catch (e) {
-    document.getElementById("vrMsg").textContent = "هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە";
-  }
-  btn.disabled = false; btn.textContent = "پشتڕاستکردنەوە و دەستپێکردن";
+  btn.disabled = false; btn.textContent = "خۆتۆمارکردن";
 }
 
 // ═══════════════════════════════════════════════════════
