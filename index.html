@@ -1,42 +1,673 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="ku" dir="rtl">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Football Quiz Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>کوئیز گەیم — ئۆنلاین</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800;900&family=Oxanium:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080f; --surface:#0f1120;
+  --glass:rgba(255,255,255,.06); --gb:rgba(255,255,255,.11);
+  --gold:#f0b429; --red:#e63946; --blue:#1d4ed8;
+  --ok:#06d6a0; --ng:#e63946; --purple:#7c3aed;
+  --orange:#f97316; --cyan:#06b6d4; --pink:#ec4899;
+  --text:#f0f0f0; --muted:rgba(240,240,240,.45);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Noto Sans Arabic',sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh; overflow-x:hidden; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 50% at 15% 15%,rgba(230,57,70,.12),transparent 55%),
+             radial-gradient(ellipse 60% 45% at 85% 85%,rgba(29,78,216,.14),transparent 55%);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px),
+    repeating-linear-gradient(90deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px);}
+
+.screen{display:none;position:relative;z-index:1;min-height:100vh;padding:28px 16px 50px;
+  flex-direction:column;align-items:center;justify-content:center;animation:fi .35s ease;}
+.screen.active{display:flex;}
+.screen.top{justify-content:flex-start;padding-top:70px;}
+@keyframes fi{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+.logo{text-align:center;margin-bottom:8px;}
+.logo h1{font-family:'Oxanium',sans-serif;font-size:clamp(2rem,7vw,3.4rem);font-weight:800;
+  letter-spacing:5px;
+  background:linear-gradient(135deg,#fff,var(--gold) 45%,var(--red));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 32px rgba(240,180,41,.4));}
+.logo p{font-size:.82rem;color:var(--muted);letter-spacing:6px;margin-top:4px;}
+
+/* LIVE ONLINE PILL */
+.online-pill{display:inline-flex;align-items:center;gap:8px;margin:16px 0 26px;
+  padding:8px 20px;border-radius:50px;background:rgba(6,214,160,.1);
+  border:1.5px solid rgba(6,214,160,.35);font-size:.86rem;font-weight:700;color:#6effd8;
+  backdrop-filter:blur(10px);}
+.dot-live{width:9px;height:9px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 8px var(--ok);animation:pulse-dot 1.4s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+.online-pill strong{font-family:'Oxanium',sans-serif;font-size:1.05rem;color:var(--ok);}
+
+/* COUNTDOWN CARD */
+.cd-card{background:var(--glass);border:1.5px solid var(--gb);border-radius:24px;
+  padding:32px 24px;backdrop-filter:blur(20px);width:100%;max-width:560px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:center;margin-bottom:22px;
+  position:relative;overflow:hidden;}
+.cd-card.live{border-color:rgba(240,180,41,.55);box-shadow:0 0 60px rgba(240,180,41,.18),0 20px 60px rgba(0,0,0,.5);}
+.cd-card.off{border-color:rgba(230,57,70,.3);}
+.cd-eyebrow{font-size:.76rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+.cd-nextday{font-size:1.05rem;font-weight:700;color:var(--gold);margin-bottom:18px;}
+.cd-grid{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;}
+.cd-unit{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:14px 6px;min-width:74px;flex:1;max-width:100px;}
+.cd-num{font-family:'Oxanium',sans-serif;font-size:clamp(1.8rem,7vw,2.5rem);font-weight:800;
+  color:var(--gold);line-height:1;font-variant-numeric:tabular-nums;}
+.cd-lbl{font-size:.7rem;color:var(--muted);margin-top:6px;letter-spacing:1px;}
+.cd-live-badge{display:none;padding:14px 26px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(240,180,41,.22),rgba(230,57,70,.18));
+  border:2px solid var(--gold);font-family:'Oxanium',sans-serif;font-weight:800;
+  font-size:1.3rem;color:var(--gold);letter-spacing:2px;}
+.cd-live-badge .pulse-ring{display:inline-block;width:10px;height:10px;border-radius:50%;
+  background:var(--red);margin-left:8px;animation:pulse-dot 1s infinite;}
+.cd-off-badge{display:none;padding:12px 24px;border-radius:14px;
+  background:rgba(230,57,70,.1);border:1.5px solid rgba(230,57,70,.35);
+  color:#ffaaaa;font-weight:700;font-size:.95rem;}
+
+/* WEEK STRIP */
+.week-strip{display:flex;gap:6px;justify-content:center;margin-top:20px;flex-wrap:wrap;}
+.wchip{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:800;font-family:'Oxanium',sans-serif;
+  background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);color:var(--muted);}
+.wchip.play{background:rgba(240,180,41,.1);border-color:rgba(240,180,41,.35);color:var(--gold);}
+.wchip.off{background:rgba(230,57,70,.08);border-color:rgba(230,57,70,.3);color:#ff9a9a;
+  text-decoration:line-through;}
+.wchip.today{outline:2px solid #fff;outline-offset:2px;}
+
+/* BUTTONS */
+.mwrap{display:flex;flex-direction:column;gap:14px;width:100%;max-width:400px;margin-top:6px;}
+.btn{position:relative;padding:17px 30px;border:none;border-radius:14px;
+  font-family:'Noto Sans Arabic',sans-serif;font-size:1.05rem;font-weight:700;
+  cursor:pointer;overflow:hidden;transition:transform .2s,box-shadow .2s;}
+.btn::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(160deg,rgba(255,255,255,.13),transparent);}
+.btn:hover{transform:translateY(-3px);}
+.btn:active{transform:translateY(1px);}
+.btn-gold {background:linear-gradient(135deg,#c28a00,var(--gold)); box-shadow:0 8px 28px rgba(240,180,41,.4); color:#1a1000;}
+.btn-red  {background:linear-gradient(135deg,#b91c2a,var(--red));  box-shadow:0 8px 28px rgba(230,57,70,.45); color:#fff;}
+.btn-blue {background:linear-gradient(135deg,#1034a6,var(--blue)); box-shadow:0 8px 28px rgba(29,78,216,.45); color:#fff;}
+.btn-ghost{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);color:var(--text);box-shadow:none;}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.btn-link{background:none;border:none;color:var(--gold);font-family:'Noto Sans Arabic',sans-serif;
+  font-size:.86rem;cursor:pointer;text-decoration:underline;padding:6px;}
+
+.bk{position:fixed;top:16px;right:16px;z-index:50;padding:8px 18px;border-radius:50px;
+  border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);
+  backdrop-filter:blur(10px);color:var(--muted);
+  font-family:'Noto Sans Arabic',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s;}
+.bk:hover{background:rgba(255,255,255,.12);color:#fff;}
+
+.note{margin-top:20px;max-width:460px;text-align:center;font-size:.78rem;color:var(--muted);
+  padding:12px 18px;border-radius:12px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.07);}
+
+/* CARD / FORMS */
+.card{background:var(--glass);border:1.5px solid var(--gb);border-radius:20px;
+  padding:28px;backdrop-filter:blur(20px);width:100%;max-width:420px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.card h2{font-size:1.35rem;font-weight:800;margin-bottom:6px;text-align:center;color:var(--gold);}
+.card .sub{font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:20px;}
+.fg{margin-bottom:14px;position:relative;}
+.fg label{display:block;font-size:.84rem;color:var(--muted);margin-bottom:6px;}
+.fg input{width:100%;padding:12px 16px;background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);
+  font-family:'Noto Sans Arabic',sans-serif;font-size:.97rem;outline:none;
+  transition:border-color .2s;direction:ltr;text-align:right;}
+.fg input:focus{border-color:var(--gold);}
+.fg input.err{border-color:var(--ng);}
+.fg .eyebtn{position:absolute;left:12px;top:38px;background:none;border:none;
+  color:var(--muted);cursor:pointer;font-size:.95rem;}
+.fg-msg{font-size:.74rem;color:var(--ng);margin-top:5px;min-height:14px;}
+.otp-row{display:flex;gap:9px;justify-content:center;direction:ltr;margin:10px 0 6px;}
+.otp-row input{width:48px;height:56px;text-align:center;font-family:'Oxanium',sans-serif;
+  font-size:1.5rem;font-weight:800;background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:var(--gold);outline:none;}
+.otp-row input:focus{border-color:var(--gold);}
+.dev-box{background:rgba(240,180,41,.09);border:1.5px dashed rgba(240,180,41,.5);
+  border-radius:12px;padding:12px 16px;text-align:center;margin-bottom:16px;font-size:.84rem;}
+.dev-box .dcode{font-family:'Oxanium',sans-serif;font-size:1.6rem;font-weight:800;
+  color:var(--gold);letter-spacing:6px;margin-top:6px;}
+.dev-tag{display:inline-block;font-size:.65rem;background:var(--purple);color:#fff;
+  padding:2px 9px;border-radius:20px;margin-bottom:6px;letter-spacing:1px;}
+
+/* DASHBOARD */
+.dash-head{display:flex;flex-direction:column;align-items:center;margin-bottom:22px;}
+.avatar{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:2.6rem;background:linear-gradient(135deg,rgba(240,180,41,.25),rgba(230,57,70,.2));
+  border:3px solid rgba(240,180,41,.5);margin-bottom:12px;box-shadow:0 0 30px rgba(240,180,41,.2);}
+.dash-name{font-size:1.35rem;font-weight:800;color:#fff;}
+.dash-phone{font-size:.8rem;color:var(--muted);direction:ltr;margin-top:2px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;max-width:560px;margin-bottom:22px;}
+.stat-card{background:var(--glass);border:1.5px solid var(--gb);border-radius:16px;
+  padding:16px 8px;text-align:center;}
+.stat-card .sv{font-family:'Oxanium',sans-serif;font-size:1.7rem;font-weight:800;color:var(--gold);}
+.stat-card .sl{font-size:.7rem;color:var(--muted);margin-top:4px;}
+.hist-wrap{width:100%;max-width:560px;}
+.hist-title{font-size:.9rem;color:var(--muted);font-weight:700;margin-bottom:10px;text-align:center;}
+.hist-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:26px 0;
+  background:var(--glass);border:1.5px dashed rgba(255,255,255,.12);border-radius:14px;}
+.hist-item{display:flex;justify-content:space-between;align-items:center;
+  background:var(--glass);border:1.5px solid var(--gb);border-radius:12px;
+  padding:12px 16px;margin-bottom:8px;font-size:.86rem;}
+
+.notif{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);
+  padding:12px 24px;border-radius:50px;font-weight:700;font-size:.9rem;z-index:300;
+  transition:transform .3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center;}
+.notif.show{transform:translateX(-50%) translateY(0);}
+.notif.suc{background:var(--ok);color:#001a0f;}
+.notif.err{background:var(--ng);color:#fff;}
+.notif.inf{background:var(--blue);color:#fff;}
+</style>
 </head>
+<body>
 
-<body class="bg-dark text-white">
+<!-- HOME -->
+<div id="s-home" class="screen active">
+  <div class="logo">
+    <h1>QUIZ GAME</h1>
+    <p>کوئیز گەیم — ئۆنلاین</p>
+  </div>
 
-    <div class="container d-flex justify-content-center align-items-center vh-100">
-        <div class="card p-4 shadow-lg bg-secondary text-white w-100" style="max-width: 380px;">
-            <h2 class="text-center mb-3">Football Quiz Login</h2>
+  <div class="online-pill">
+    <span class="dot-live"></span>
+    <span id="onlineCount"><strong>—</strong> ئۆنلاین ئێستا</span>
+  </div>
 
-            <form id="loginForm">
-                <div class="mb-3">
-                    <label class="form-label">Name</label>
-                    <input type="text" class="form-control" id="username" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" required>
-                </div>
-
-                <button class="btn btn-warning w-100" type="submit">Start Quiz</button>
-            </form>
-        </div>
+  <div class="cd-card" id="cdCard">
+    <div class="cd-eyebrow">یاری داهاتوو</div>
+    <div class="cd-nextday" id="cdNextDay">—</div>
+    <div class="cd-grid" id="cdGrid">
+      <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-lbl">ڕۆژ</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cdH">00</div><div class="cd-lbl">کاژێر</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cdM">00</div><div class="cd-lbl">خولەک</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cdS">00</div><div class="cd-lbl">چرکە</div></div>
     </div>
+    <div class="cd-live-badge" id="cdLiveBadge">🔴 یاری ئێستا چالاکە<span class="pulse-ring"></span></div>
+    <div class="cd-off-badge" id="cdOffBadge">😴 ئەمشەو هەینییە — یاری نییە</div>
+    <div class="week-strip" id="weekStrip"></div>
+  </div>
 
-    <script src="script.js"></script>
+  <div class="mwrap" id="homeAuthBtns">
+    <button class="btn btn-gold" onclick="go('s-login')">🔑 &nbsp; چوونەژوورەوە</button>
+    <button class="btn btn-ghost" onclick="go('s-register')">✨ &nbsp; خۆتۆمارکردن</button>
+  </div>
+
+  <div class="mwrap" id="homeUserBtns" style="display:none">
+    <button class="btn btn-gold" onclick="go('s-dashboard')">🏠 &nbsp; داشبۆردەکەم</button>
+  </div>
+
+  <div class="note" id="homeNote">
+    یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="s-login" class="screen">
+  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
+  <div class="card">
+    <h2>🔑 چوونەژوورەوە</h2>
+    <div class="sub">ژمارەی مۆبایل و وشەی نهێنیت بنووسە</div>
+    <div class="fg">
+      <label>ژمارەی مۆبایل</label>
+      <input type="tel" id="loPhone" placeholder="07XXXXXXXXX" inputmode="numeric"/>
+      <div class="fg-msg" id="loPhoneMsg"></div>
+    </div>
+    <div class="fg">
+      <label>وشەی نهێنی</label>
+      <input type="password" id="loPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <button class="eyebtn" onclick="toggleEye('loPass')">👁</button>
+      <div class="fg-msg" id="loPassMsg"></div>
+    </div>
+    <button class="btn btn-gold" id="loBtn" onclick="doLogin()" style="width:100%;margin-top:6px">چوونەژوورەوە</button>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn-link" onclick="go('s-register')">هەژمارت نییە؟ خۆت تۆمار بکە</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div id="s-register" class="screen">
+  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
+  <div class="card">
+    <h2>✨ خۆتۆمارکردن</h2>
+    <div class="sub">ژمارە، ناو و وشەی نهێنیت دیاری بکە</div>
+    <div class="fg">
+      <label>ژمارەی مۆبایل</label>
+      <input type="tel" id="rgPhone" placeholder="07XXXXXXXXX" inputmode="numeric"/>
+      <div class="fg-msg" id="rgPhoneMsg"></div>
+    </div>
+    <div class="fg">
+      <label>ناوی یاریزان</label>
+      <input type="text" id="rgName" placeholder="ناوت لێرە بنووسە"/>
+      <div class="fg-msg" id="rgNameMsg"></div>
+    </div>
+    <div class="fg">
+      <label>وشەی نهێنی (لانیکەم ٦ پیت)</label>
+      <input type="password" id="rgPass" placeholder="••••••••"/>
+      <button class="eyebtn" onclick="toggleEye('rgPass')">👁</button>
+      <div class="fg-msg" id="rgPassMsg"></div>
+    </div>
+    <div class="fg">
+      <label>دووبارەکردنەوەی وشەی نهێنی</label>
+      <input type="password" id="rgPass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"/>
+      <div class="fg-msg" id="rgPass2Msg"></div>
+    </div>
+    <button class="btn btn-gold" id="rgBtn" onclick="doRegister()" style="width:100%;margin-top:6px">ناردنی کۆدی پشتڕاستکردنەوە</button>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn-link" onclick="go('s-login')">هەژمارت هەیە؟ چوونەژوورەوە</button>
+    </div>
+  </div>
+</div>
+
+<!-- VERIFY -->
+<div id="s-verify" class="screen">
+  <button class="bk" onclick="go('s-register')">← گەڕانەوە</button>
+  <div class="card">
+    <h2>📲 پشتڕاستکردنەوە</h2>
+    <div class="sub">کۆدی ٤ژمارەیی بنووسە کە نێردراوە بۆ <span id="vrPhoneShow" style="color:var(--gold)"></span></div>
+    <div class="dev-box">
+      <span class="dev-tag">DEV MODE — SMS ڕاستەقینە هێشتا نەبەستراوەتەوە</span>
+      <div>لە قۆناغی داهاتوودا ئەم کۆدە بەم شێوەیە بۆ مۆبایلەکەت دەنێردرێت. ئێستا بۆ تاقیکردنەوە لێرەدا نیشان دەدرێت:</div>
+      <div class="dcode" id="vrDevCode">— — — —</div>
+    </div>
+    <div class="otp-row">
+      <input maxlength="1" inputmode="numeric" id="otp0" onkeyup="otpMove(0,event)"/>
+      <input maxlength="1" inputmode="numeric" id="otp1" onkeyup="otpMove(1,event)"/>
+      <input maxlength="1" inputmode="numeric" id="otp2" onkeyup="otpMove(2,event)"/>
+      <input maxlength="1" inputmode="numeric" id="otp3" onkeyup="otpMove(3,event)"/>
+    </div>
+    <div class="fg-msg" id="vrMsg" style="text-align:center;margin-bottom:8px"></div>
+    <button class="btn btn-gold" id="vrBtn" onclick="doVerify()" style="width:100%;margin-top:6px">پشتڕاستکردنەوە و دەستپێکردن</button>
+    <div style="text-align:center;margin-top:12px">
+      <button class="btn-link" onclick="resendCode()">کۆدەکە دووبارە بنێرەوە</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="s-dashboard" class="screen top">
+  <button class="bk" onclick="doLogout()">🚪 دەرچوون</button>
+  <div class="dash-head">
+    <div class="avatar" id="dashAvatar">🎮</div>
+    <div class="dash-name" id="dashName">—</div>
+    <div class="dash-phone" id="dashPhone">—</div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="sv" id="dashTrophies">0</div><div class="sl">🏆 مۆدال</div></div>
+    <div class="stat-card"><div class="sv" id="dashGames">0</div><div class="sl">🎮 یاری</div></div>
+    <div class="stat-card"><div class="sv" id="dashWins">0</div><div class="sl">✅ بردنەوە</div></div>
+  </div>
+  <div class="hist-wrap">
+    <div class="hist-title">مێژووی یاریەکان</div>
+    <div id="histList"><div class="hist-empty">هێشتا هیچ یارییەک نەکراوە — کاتژمێر ٩ی شەو بگە!</div></div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  FIREBASE REST HELPERS
+// ═══════════════════════════════════════════════════════
+const FB = "https://quizgame2-cd4d5-default-rtdb.firebaseio.com";
+
+async function fbGet(path) {
+  const r = await fetch(FB + path + ".json");
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+async function fbPut(path, data) {
+  const r = await fetch(FB + path + ".json", {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+async function fbDelete(path) {
+  const r = await fetch(FB + path + ".json", { method: "DELETE" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════
+//  PASSWORD HASHING (client-side SHA-256 — see note to user
+//  about needing Firebase security rules to actually protect
+//  this data; hashing here just avoids plaintext storage)
+// ═══════════════════════════════════════════════════════
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function normPhone(p) { return (p || "").replace(/[^0-9]/g, ""); }
+
+// ═══════════════════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════════════════
+function go(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if (id === "s-dashboard") renderDashboard();
+}
+
+function toggleEye(id) {
+  const el = document.getElementById(id);
+  el.type = el.type === "password" ? "text" : "password";
+}
+
+function otpMove(i, e) {
+  const val = e.target.value.replace(/[^0-9]/g, "");
+  e.target.value = val;
+  if (val && i < 3) document.getElementById("otp" + (i + 1)).focus();
+  if (e.key === "Backspace" && !val && i > 0) document.getElementById("otp" + (i - 1)).focus();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SESSION — persisted in localStorage so refresh skips login
+// ═══════════════════════════════════════════════════════
+const SESSION_KEY = "quiz_session_v1";
+function saveSession(user) { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); }
+function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; } }
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+function applySessionUI() {
+  const s = loadSession();
+  document.getElementById("homeAuthBtns").style.display = s ? "none" : "flex";
+  document.getElementById("homeUserBtns").style.display = s ? "flex" : "none";
+  document.getElementById("homeNote").textContent = s
+    ? "بەخێربێیتەوە " + s.username + " — چاوەڕێی کاتژمێر ٩ی شەو بکە"
+    : "یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.";
+  return s;
+}
+
+// ═══════════════════════════════════════════════════════
+//  REGISTER FLOW
+// ═══════════════════════════════════════════════════════
+let pendingReg = null; // {phone, username, passHash, code}
+
+function clearErr(ids) { ids.forEach(id => { document.getElementById(id).textContent = ""; }); }
+
+async function doRegister() {
+  clearErr(["rgPhoneMsg","rgNameMsg","rgPassMsg","rgPass2Msg"]);
+  const phone = normPhone(document.getElementById("rgPhone").value);
+  const name  = document.getElementById("rgName").value.trim();
+  const pass  = document.getElementById("rgPass").value;
+  const pass2 = document.getElementById("rgPass2").value;
+
+  let ok = true;
+  if (phone.length < 8) { document.getElementById("rgPhoneMsg").textContent = "ژمارەی مۆبایل ڕاست نییە"; ok = false; }
+  if (!name)             { document.getElementById("rgNameMsg").textContent = "ناوت بنووسە"; ok = false; }
+  if (pass.length < 6)   { document.getElementById("rgPassMsg").textContent = "لانیکەم ٦ پیت"; ok = false; }
+  if (pass !== pass2)    { document.getElementById("rgPass2Msg").textContent = "وشەی نهێنی وەک یەک نییە"; ok = false; }
+  if (!ok) return;
+
+  const btn = document.getElementById("rgBtn");
+  btn.disabled = true; btn.textContent = "⏳ چاوەڕوان بە...";
+  try {
+    const existing = await fbGet("/users/" + phone);
+    if (existing) {
+      document.getElementById("rgPhoneMsg").textContent = "ئەم ژمارەیە پێشتر تۆمارکراوە";
+      btn.disabled = false; btn.textContent = "ناردنی کۆدی پشتڕاستکردنەوە"; return;
+    }
+    const passHash = await sha256(pass);
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    pendingReg = { phone, username: name, passHash, code };
+    // store pending verification server-side too, with short "expiry" client-checked
+    await fbPut("/pending_verify/" + phone, { code, username: name, passHash, t: Date.now() });
+
+    document.getElementById("vrPhoneShow").textContent = "+" + phone;
+    document.getElementById("vrDevCode").textContent = code.split("").join(" ");
+    ["otp0","otp1","otp2","otp3"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("vrMsg").textContent = "";
+    go("s-verify");
+    document.getElementById("otp0").focus();
+  } catch (e) {
+    notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
+  }
+  btn.disabled = false; btn.textContent = "ناردنی کۆدی پشتڕاستکردنەوە";
+}
+
+async function resendCode() {
+  if (!pendingReg) return;
+  const code = String(Math.floor(1000 + Math.random() * 9000));
+  pendingReg.code = code;
+  await fbPut("/pending_verify/" + pendingReg.phone, {
+    code, username: pendingReg.username, passHash: pendingReg.passHash, t: Date.now()
+  });
+  document.getElementById("vrDevCode").textContent = code.split("").join(" ");
+  notif("کۆدێکی نوێ نێردرا (DEV MODE)", "inf");
+}
+
+async function doVerify() {
+  if (!pendingReg) { go("s-register"); return; }
+  const entered = ["otp0","otp1","otp2","otp3"].map(id => document.getElementById(id).value).join("");
+  if (entered.length < 4) { document.getElementById("vrMsg").textContent = "هەموو ٤ ژمارەکە بنووسە"; return; }
+
+  const btn = document.getElementById("vrBtn");
+  btn.disabled = true; btn.textContent = "⏳ پشتڕاستکردنەوە...";
+  try {
+    const pend = await fbGet("/pending_verify/" + pendingReg.phone);
+    if (!pend || pend.code !== entered) {
+      document.getElementById("vrMsg").textContent = "کۆدەکە هەڵەیە";
+      btn.disabled = false; btn.textContent = "پشتڕاستکردنەوە و دەستپێکردن"; return;
+    }
+    const userObj = {
+      username: pend.username, passHash: pend.passHash,
+      trophies: 0, gamesPlayed: 0, wins: 0, history: [], createdAt: Date.now()
+    };
+    await fbPut("/users/" + pendingReg.phone, userObj);
+    await fbDelete("/pending_verify/" + pendingReg.phone);
+    saveSession({ phone: pendingReg.phone, username: pend.username });
+    pendingReg = null;
+    notif("هەژمار دروستکرا — بەخێربێیت! 🎉", "suc");
+    applySessionUI();
+    go("s-dashboard");
+  } catch (e) {
+    document.getElementById("vrMsg").textContent = "هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە";
+  }
+  btn.disabled = false; btn.textContent = "پشتڕاستکردنەوە و دەستپێکردن";
+}
+
+// ═══════════════════════════════════════════════════════
+//  LOGIN FLOW
+// ═══════════════════════════════════════════════════════
+async function doLogin() {
+  clearErr(["loPhoneMsg","loPassMsg"]);
+  const phone = normPhone(document.getElementById("loPhone").value);
+  const pass  = document.getElementById("loPass").value;
+  if (phone.length < 8) { document.getElementById("loPhoneMsg").textContent = "ژمارەی مۆبایل ڕاست نییە"; return; }
+  if (!pass)             { document.getElementById("loPassMsg").textContent = "وشەی نهێنی بنووسە"; return; }
+
+  const btn = document.getElementById("loBtn");
+  btn.disabled = true; btn.textContent = "⏳ چاوەڕوان بە...";
+  try {
+    const user = await fbGet("/users/" + phone);
+    if (!user) {
+      document.getElementById("loPhoneMsg").textContent = "هەژمار بوونی نییە";
+      btn.disabled = false; btn.textContent = "چوونەژوورەوە"; return;
+    }
+    const passHash = await sha256(pass);
+    if (passHash !== user.passHash) {
+      document.getElementById("loPassMsg").textContent = "وشەی نهێنی هەڵەیە";
+      btn.disabled = false; btn.textContent = "چوونەژوورەوە"; return;
+    }
+    saveSession({ phone, username: user.username });
+    notif("بەخێربێیتەوە " + user.username + " ✓", "suc");
+    applySessionUI();
+    go("s-dashboard");
+  } catch (e) {
+    notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
+  }
+  btn.disabled = false; btn.textContent = "چوونەژوورەوە";
+}
+
+function doLogout() {
+  clearSession();
+  applySessionUI();
+  notif("چوویتە دەرەوە", "inf");
+  go("s-home");
+}
+
+// ═══════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════
+async function renderDashboard() {
+  const s = loadSession();
+  if (!s) { go("s-home"); return; }
+  document.getElementById("dashName").textContent  = s.username;
+  document.getElementById("dashPhone").textContent = "+" + s.phone;
+  try {
+    const user = await fbGet("/users/" + s.phone);
+    if (!user) { doLogout(); return; }
+    document.getElementById("dashTrophies").textContent = user.trophies || 0;
+    document.getElementById("dashGames").textContent    = user.gamesPlayed || 0;
+    document.getElementById("dashWins").textContent     = user.wins || 0;
+    const list = document.getElementById("histList");
+    const hist = user.history || [];
+    if (!hist.length) {
+      list.innerHTML = '<div class="hist-empty">هێشتا هیچ یارییەک نەکراوە — کاتژمێر ٩ی شەو بگە!</div>';
+    } else {
+      list.innerHTML = hist.slice().reverse().map(h =>
+        `<div class="hist-item"><span>${h.date || ""}</span><span>${h.result || ""}</span></div>`
+      ).join("");
+    }
+  } catch (e) { /* keep cached UI on network hiccup */ }
+}
+
+// ═══════════════════════════════════════════════════════
+//  PRESENCE — heartbeat + poll (REST has no onDisconnect)
+// ═══════════════════════════════════════════════════════
+const PRESENCE_TTL    = 25;
+const HEARTBEAT_EVERY = 8000;
+const POLL_EVERY      = 5000;
+
+function myClientId() {
+  let id = localStorage.getItem("quiz_client_id");
+  if (!id) { id = "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9); localStorage.setItem("quiz_client_id", id); }
+  return id;
+}
+async function sendHeartbeat() {
+  try { await fbPut("/presence/" + myClientId(), { t: Date.now() }); } catch (e) {}
+}
+async function pollOnlineCount() {
+  try {
+    const data = await fbGet("/presence");
+    if (!data) { setOnlineCount(0); return; }
+    const now = Date.now();
+    const active = Object.values(data).filter(v => v && (now - v.t) < PRESENCE_TTL * 1000);
+    setOnlineCount(active.length);
+  } catch (e) {}
+}
+function setOnlineCount(n) { document.getElementById("onlineCount").innerHTML = "<strong>" + n + "</strong> ئۆنلاین ئێستا"; }
+
+sendHeartbeat(); pollOnlineCount();
+setInterval(sendHeartbeat, HEARTBEAT_EVERY);
+setInterval(pollOnlineCount, POLL_EVERY);
+window.addEventListener("beforeunload", () => {
+  navigator.sendBeacon && navigator.sendBeacon(FB + "/presence/" + myClientId() + ".json?method=DELETE");
+});
+
+// ═══════════════════════════════════════════════════════
+//  COUNTDOWN — every night 9 PM, except Friday
+// ═══════════════════════════════════════════════════════
+const GAME_HOUR = 21;
+const OFF_DAY   = 5;
+const DAY_NAMES = ["یەکشەممە","دووشەممە","سێشەممە","چوارشەممە","پێنجشەممە","هەینی","شەممە"];
+
+function nextGameStart(from) {
+  for (let add = 0; add <= 8; add++) {
+    const cand = new Date(from);
+    cand.setDate(cand.getDate() + add);
+    cand.setHours(GAME_HOUR, 0, 0, 0);
+    if (cand.getDay() === OFF_DAY) continue;
+    if (add === 0 && cand.getTime() <= from.getTime()) continue;
+    return cand;
+  }
+  return null;
+}
+function gameEndForStart(startDate) { const end = new Date(startDate); end.setHours(end.getHours() + 1); return end; }
+function pad(n) { return String(n).padStart(2, "0"); }
+
+function renderWeekStrip(now) {
+  const strip = document.getElementById("weekStrip"); strip.innerHTML = "";
+  const todayIdx = now.getDay();
+  for (let i = 0; i < 7; i++) {
+    const chip = document.createElement("div");
+    const isOff = i === OFF_DAY;
+    chip.className = "wchip " + (isOff ? "off" : "play") + (i === todayIdx ? " today" : "");
+    chip.textContent = DAY_NAMES[i].slice(0, 2);
+    chip.title = DAY_NAMES[i];
+    strip.appendChild(chip);
+  }
+}
+let weekStripDay = null;
+function tickCountdown() {
+  const now = new Date();
+  if (weekStripDay !== now.getDate()) { renderWeekStrip(now); weekStripDay = now.getDate(); }
+  const card = document.getElementById("cdCard"), grid = document.getElementById("cdGrid");
+  const liveBadge = document.getElementById("cdLiveBadge"), offBadge = document.getElementById("cdOffBadge");
+  const nextDayEl = document.getElementById("cdNextDay");
+  const todayStart = new Date(now); todayStart.setHours(GAME_HOUR, 0, 0, 0);
+  const isFridayToday = now.getDay() === OFF_DAY;
+  const liveNow = !isFridayToday && now >= todayStart && now < gameEndForStart(todayStart);
+
+  if (liveNow) {
+    card.className = "cd-card live"; grid.style.display = "none";
+    offBadge.style.display = "none"; liveBadge.style.display = "inline-block";
+    nextDayEl.textContent = "ئەمشەو — " + DAY_NAMES[now.getDay()];
+    return;
+  }
+  if (isFridayToday) {
+    card.className = "cd-card off"; grid.style.display = "none";
+    liveBadge.style.display = "none"; offBadge.style.display = "inline-block";
+  } else {
+    card.className = "cd-card"; grid.style.display = "flex";
+    liveBadge.style.display = "none"; offBadge.style.display = "none";
+  }
+  const target = nextGameStart(now);
+  if (!target) { nextDayEl.textContent = "—"; return; }
+  const sameDay = target.toDateString() === now.toDateString();
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow = target.toDateString() === tomorrow.toDateString();
+  nextDayEl.textContent = (sameDay ? "ئەمشەو" : isTomorrow ? "بەیانی شەو" : DAY_NAMES[target.getDay()]) + " — کاتژمێر ٩ی شەو";
+  let diff = Math.max(0, target.getTime() - now.getTime());
+  const days = Math.floor(diff / 86400000); diff -= days * 86400000;
+  const hrs  = Math.floor(diff / 3600000);  diff -= hrs * 3600000;
+  const mins = Math.floor(diff / 60000);    diff -= mins * 60000;
+  const secs = Math.floor(diff / 1000);
+  document.getElementById("cdD").textContent = pad(days);
+  document.getElementById("cdH").textContent = pad(hrs);
+  document.getElementById("cdM").textContent = pad(mins);
+  document.getElementById("cdS").textContent = pad(secs);
+}
+tickCountdown(); setInterval(tickCountdown, 1000);
+
+// ═══════════════════════════════════════════════════════
+//  NOTIF + BOOT
+// ═══════════════════════════════════════════════════════
+function notif(msg, type) {
+  const el = document.getElementById("notif");
+  el.textContent = msg; el.className = "notif " + (type || "inf") + " show";
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+applySessionUI();
+</script>
 </body>
-
 </html>
