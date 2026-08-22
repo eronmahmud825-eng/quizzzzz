@@ -409,15 +409,51 @@ function otpMove(i, e) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  SESSION — persisted in localStorage so refresh skips login
+//  SESSION — the actual session record lives in Firebase at
+//  /sessions/{token}. Only the random opaque token itself sits in
+//  localStorage (a phone/browser can't avoid storing *something*
+//  locally to know "which session am I" — but no user data, no
+//  phone number, no name is kept on the device anymore).
 // ═══════════════════════════════════════════════════════
-const SESSION_KEY = "quiz_session_v1";
-function saveSession(user) { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); }
-function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; } }
-function clearSession() { localStorage.removeItem(SESSION_KEY); }
+const TOKEN_KEY = "quiz_session_token";
+let currentSession = null; // {phone, username, token} — cached in memory after boot
+
+function genToken() {
+  return "s_" + Date.now() + "_" + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
+}
+
+async function saveSession(user) {
+  const token = genToken();
+  await fbPut("/sessions/" + token, { phone: user.phone, username: user.username, createdAt: Date.now() });
+  localStorage.setItem(TOKEN_KEY, token);
+  currentSession = { phone: user.phone, username: user.username, token };
+}
+
+async function clearSession() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+  currentSession = null;
+  if (token) { try { await fbDelete("/sessions/" + token); } catch (e) {} }
+}
+
+// Runs once on page load: resolves the local token against Firebase
+// to rebuild the session, then paints the UI. Everything else in the
+// app reads the already-resolved `currentSession` synchronously.
+async function bootSession() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) { currentSession = null; applySessionUI(); return; }
+  try {
+    const rec = await fbGet("/sessions/" + token);
+    if (rec) currentSession = { phone: rec.phone, username: rec.username, token };
+    else { localStorage.removeItem(TOKEN_KEY); currentSession = null; }
+  } catch (e) {
+    currentSession = null; // network hiccup — user just sees the login screen this once
+  }
+  applySessionUI();
+}
 
 function applySessionUI() {
-  const s = loadSession();
+  const s = currentSession;
   document.getElementById("homeAuthBtns").style.display = s ? "none" : "flex";
   document.getElementById("homeUserBtns").style.display = s ? "block" : "none";
   document.getElementById("homeNote").textContent = s
@@ -520,7 +556,7 @@ async function doVerify() {
     };
     await fbPut("/users/" + pendingReg.phone, userObj);
     await fbDelete("/pending_verify/" + pendingReg.phone);
-    saveSession({ phone: pendingReg.phone, username: pend.username });
+    await saveSession({ phone: pendingReg.phone, username: pend.username });
     pendingReg = null;
     notif("هەژمار دروستکرا — بەخێربێیت! 🎉", "suc");
     applySessionUI();
@@ -554,7 +590,7 @@ async function doLogin() {
       document.getElementById("loPassMsg").textContent = "وشەی نهێنی هەڵەیە";
       btn.disabled = false; btn.textContent = "چوونەژوورەوە"; return;
     }
-    saveSession({ phone, username: user.username });
+    await saveSession({ phone, username: user.username });
     notif("بەخێربێیتەوە " + user.username + " ✓", "suc");
     applySessionUI();
     go("s-dashboard");
@@ -564,8 +600,8 @@ async function doLogin() {
   btn.disabled = false; btn.textContent = "چوونەژوورەوە";
 }
 
-function doLogout() {
-  clearSession();
+async function doLogout() {
+  await clearSession();
   applySessionUI();
   notif("چوویتە دەرەوە", "inf");
   go("s-home");
@@ -575,7 +611,7 @@ function doLogout() {
 //  DASHBOARD
 // ═══════════════════════════════════════════════════════
 async function renderDashboard() {
-  const s = loadSession();
+  const s = currentSession;
   if (!s) { go("s-home"); return; }
   document.getElementById("dashName").textContent  = s.username;
   document.getElementById("dashPhone").textContent = "+" + s.phone;
@@ -627,7 +663,7 @@ sendHeartbeat(); pollOnlineCount();
 setInterval(sendHeartbeat, HEARTBEAT_EVERY);
 setInterval(pollOnlineCount, POLL_EVERY);
 setInterval(() => {
-  const s = loadSession();
+  const s = currentSession;
   if (s && document.getElementById("s-home").classList.contains("active")) loadHomeMiniStats(s.phone);
 }, 10000);
 window.addEventListener("beforeunload", () => {
@@ -718,7 +754,7 @@ function notif(msg, type) {
   clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 3000);
 }
 
-applySessionUI();
+bootSession();
 </script>
 </body>
 </html>
