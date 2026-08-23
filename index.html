@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800;900&family=Oxanium:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
 <style>
 :root{
   --bg:#07080f; --surface:#0f1120;
@@ -336,8 +337,6 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   <div class="note" id="homeNote">
     یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.
   </div>
-
-  <button class="admin-link" onclick="go('s-admin-login')">⚙️ ئەدمین</button>
 </div>
 
 <!-- LOBBY -->
@@ -407,6 +406,16 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   </div>
 </div>
 
+<!-- NOT QUALIFIED (lobby was full when the bracket generated) -->
+<div id="s-not-qualified" class="screen">
+  <div class="card" style="text-align:center;max-width:420px">
+    <div class="result-emoji">🙏</div>
+    <div class="result-title" style="color:var(--gold)">ژوورەکە پڕبوو</div>
+    <div class="result-sub">٣٢ یاریزانی یەکەم داخڵ بوون پێش تۆ. تکایە شەوی داهاتوو زووتر بچۆرە ژوورەوە!</div>
+    <button class="btn btn-gold" onclick="go('s-home')" style="width:100%;margin-top:18px">🏠 گەڕانەوە بۆ ماڵەوە</button>
+  </div>
+</div>
+
 <!-- FINAL SPECTATE -->
 <div id="s-spectate" class="screen">
   <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
@@ -429,72 +438,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   <div class="match-agrid" id="specAGrid"></div>
 </div>
 
-<!-- ADMIN LOGIN -->
-<div id="s-admin-login" class="screen">
-  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
-  <div class="card">
-    <div style="text-align:center;font-size:2.6rem;margin-bottom:10px">🔐</div>
-    <h2>وشەی نهێنی ئەدمین</h2>
-    <div class="fg">
-      <input type="password" id="admPw" placeholder="••••••" maxlength="10"
-        style="text-align:center;letter-spacing:8px;font-size:1.3rem;font-family:'Oxanium',sans-serif;direction:ltr"
-        onkeydown="if(event.key==='Enter')checkAdminPw()"/>
-    </div>
-    <button class="btn btn-red" onclick="checkAdminPw()" style="width:100%">داخلبوون</button>
-  </div>
-</div>
-
-<!-- ADMIN: TOURNAMENT QUESTION BANK -->
-<div id="s-admin-tourney" class="screen top">
-  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
-  <div class="card" style="max-width:640px;width:100%;margin-top:54px;margin-bottom:36px">
-    <h2>🏆 پرسیارەکانی تۆرنمێنت</h2>
-    <div class="sub">هەر دەورێک پرسیارە جیاکانی خۆی هەیە — کاتی وەڵامدانەوە بۆ هەموو پرسیارێک بە خولەک دیاریدەکرێت</div>
-
-    <div class="round-tabs" id="roundTabs"></div>
-
-    <div class="fg">
-      <label>دەقی پرسیار</label>
-      <textarea id="tqQ" placeholder="پرسیار بنووسە..."></textarea>
-    </div>
-    <div class="fg"><label>وەڵامەکان (هەموو ٤یان پێویستن)</label>
-      <div class="a2grid">
-        <input type="text" id="tqA0" placeholder="A — وەڵام"/>
-        <input type="text" id="tqA1" placeholder="B — وەڵام"/>
-        <input type="text" id="tqA2" placeholder="C — وەڵام"/>
-        <input type="text" id="tqA3" placeholder="D — وەڵام"/>
-      </div>
-    </div>
-    <div class="fg"><label>وەڵامی ڕاست</label>
-      <div class="crgrp">
-        <label class="crlbl" id="tqcr0" onclick="tqPickCr(0)">A</label>
-        <label class="crlbl" id="tqcr1" onclick="tqPickCr(1)">B</label>
-        <label class="crlbl" id="tqcr2" onclick="tqPickCr(2)">C</label>
-        <label class="crlbl" id="tqcr3" onclick="tqPickCr(3)">D</label>
-      </div>
-    </div>
-    <div class="fg" style="max-width:160px">
-      <label>کات (چرکە)</label>
-      <input type="number" id="tqTime" value="19" min="5" max="120"/>
-    </div>
-    <button class="btn btn-gold" id="tqSaveBtn" onclick="tqSave()" style="width:100%;margin-top:6px">💾 &nbsp; زیادکردنی پرسیار</button>
-
-    <hr class="divider">
-    <div style="text-align:center;margin-bottom:16px">
-      <button class="btn btn-red" onclick="adminForceStart()" style="padding:10px 20px;font-size:.85rem">
-        🧪 &nbsp; دەستپێکردنی تاقیکردنەوەی تۆرنمێنت ئێستا
-      </button>
-      <div style="font-size:.7rem;color:var(--muted);margin-top:6px">
-        ئەمە کاتژمێر ٩ی شەو پشتگوێ دەخات و تۆرنمێنت ڕاستەوخۆ دەستپێدەکات — تەنها بۆ تاقیکردنەوە
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span style="font-size:1rem;color:var(--muted);font-weight:700" id="tqListTitle">پرسیارەکانی دەوری ٣٢</span>
-      <span style="font-size:.76rem;color:var(--muted)" id="tqCount">٠ پرسیار</span>
-    </div>
-    <div id="tqList" style="display:flex;flex-direction:column;gap:7px"></div>
-  </div>
-</div>
+<!-- LOGIN -->
 <div id="s-login" class="screen">
   <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
   <div class="card">
@@ -574,40 +518,8 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 <div class="notif" id="notif"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-//  FIREBASE REST HELPERS
-// ═══════════════════════════════════════════════════════
-const FB = "https://quizgame2-cd4d5-default-rtdb.firebaseio.com";
-
-async function fbGet(path) {
-  const r = await fetch(FB + path + ".json");
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
-}
-async function fbPut(path, data) {
-  const r = await fetch(FB + path + ".json", {
-    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data)
-  });
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
-}
-async function fbDelete(path) {
-  const r = await fetch(FB + path + ".json", { method: "DELETE" });
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
-}
-
-// ═══════════════════════════════════════════════════════
-//  PASSWORD HASHING (client-side SHA-256 — see note to user
-//  about needing Firebase security rules to actually protect
-//  this data; hashing here just avoids plaintext storage)
-// ═══════════════════════════════════════════════════════
-async function sha256(str) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function normPhone(p) { return (p || "").replace(/[^0-9]/g, ""); }
+// FB / fbGet / fbPut / fbDelete / sha256 / normPhone / safeKey / rtdb /
+// SRV_TS / serverNow all come from firebase-config.js (loaded in <head>).
 
 // ═══════════════════════════════════════════════════════
 //  NAV
@@ -684,6 +596,7 @@ function applySessionUI() {
   if (s) {
     document.getElementById("miniName").textContent = s.username;
     loadHomeMiniStats(s.phone);
+    initUserPresence(s.phone);
   }
   refreshHomeTourneyUI();
   watchForMyMatch(); // resumes an in-progress match automatically after a page refresh
@@ -813,44 +726,32 @@ async function renderDashboard() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  FIREBASE REALTIME SDK — used for anything that needs true
-//  push updates and fair server-timestamped sync: presence,
-//  and the whole 1v1 tournament engine below. (Admin CRUD above
-//  still uses the simple REST helpers — no realtime need there.)
+//  PRESENCE — two separate presence trees:
+//
+//  1) /presence/{tabId}  — anonymous, one entry per open BROWSER TAB.
+//     Powers the "N online now" pill. Uses sessionStorage (not
+//     localStorage) for the id specifically so that opening two tabs
+//     on the same device/browser correctly counts as 2 — this was the
+//     bug where testing with two tabs on one machine still showed "1"
+//     (localStorage is shared across tabs of the same browser+site,
+//     sessionStorage is not).
+//
+//  2) /user_presence/{phone} — one entry per LOGGED-IN user (only
+//     written once you're signed in). This is what lets us detect an
+//     opponent disappearing mid-match (closed tab, lost internet, app
+//     killed) so the other player can be auto-advanced instead of
+//     waiting forever — see watchOpponentPresence() further down.
 // ═══════════════════════════════════════════════════════
-const firebaseConfig = {
-  apiKey: "AIzaSyDI-6wN-2yGjUJftd4oj8GHJlC4nlAcGdY",
-  authDomain: "quizgame2-cd4d5.firebaseapp.com",
-  databaseURL: "https://quizgame2-cd4d5-default-rtdb.firebaseio.com",
-  projectId: "quizgame2-cd4d5",
-  storageBucket: "quizgame2-cd4d5.firebasestorage.app",
-  messagingSenderId: "809610517302",
-  appId: "1:809610517302:web:1544c2cf19ff24a5127197",
-  measurementId: "G-7KB3JQCY36"
-};
-firebase.initializeApp(firebaseConfig);
-const rtdb = firebase.database();
-const SRV_TS = firebase.database.ServerValue.TIMESTAMP;
-
-// Clock offset between this device and Firebase's servers, so every
-// client computes the exact same "time remaining" during a match.
-let serverOffset = 0;
-rtdb.ref(".info/serverTimeOffset").on("value", snap => { serverOffset = snap.val() || 0; });
-function serverNow() { return Date.now() + serverOffset; }
-
-function myClientId() {
-  let id = localStorage.getItem("quiz_client_id");
-  if (!id) { id = "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9); localStorage.setItem("quiz_client_id", id); }
+function myTabId() {
+  let id = sessionStorage.getItem("quiz_tab_id");
+  if (!id) { id = "t_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9); sessionStorage.setItem("quiz_tab_id", id); }
   return id;
 }
 
-// ═══════════════════════════════════════════════════════
-//  PRESENCE — real onDisconnect, real listener (instant, no polling)
-// ═══════════════════════════════════════════════════════
 function setOnlineCount(n) { document.getElementById("onlineCount").innerHTML = "<strong>" + n + "</strong> ئۆنلاین ئێستا"; }
 
 function initPresence() {
-  const myRef = rtdb.ref("presence/" + myClientId());
+  const myRef = rtdb.ref("presence/" + myTabId());
   rtdb.ref(".info/connected").on("value", snap => {
     if (snap.val() === true) {
       myRef.onDisconnect().remove();
@@ -863,6 +764,16 @@ function initPresence() {
   });
 }
 initPresence();
+
+function initUserPresence(phone) {
+  const myRef = rtdb.ref("user_presence/" + safeKey(phone));
+  rtdb.ref(".info/connected").on("value", snap => {
+    if (snap.val() === true) {
+      myRef.onDisconnect().remove();
+      myRef.set({ t: SRV_TS });
+    }
+  });
+}
 
 setInterval(() => {
   const s = currentSession;
@@ -887,7 +798,6 @@ function nextGameStart(from) {
   }
   return null;
 }
-function gameEndForStart(startDate) { const end = new Date(startDate); end.setHours(end.getHours() + 1); return end; }
 function pad(n) { return String(n).padStart(2, "0"); }
 
 function renderWeekStrip(now) {
@@ -909,9 +819,12 @@ function tickCountdown() {
   const card = document.getElementById("cdCard"), grid = document.getElementById("cdGrid");
   const liveBadge = document.getElementById("cdLiveBadge"), offBadge = document.getElementById("cdOffBadge");
   const nextDayEl = document.getElementById("cdNextDay");
-  const todayStart = new Date(now); todayStart.setHours(GAME_HOUR, 0, 0, 0);
   const isFridayToday = now.getDay() === OFF_DAY;
-  const liveNow = !isFridayToday && now >= todayStart && now < gameEndForStart(todayStart);
+  // "Live" now follows the ACTUAL tournament state from Firebase, not a
+  // guessed clock window — so the badge stays accurate whether tonight's
+  // rounds finish in 5 minutes or drag on for an hour, and correctly
+  // resets to a fresh countdown the moment the tournament actually ends.
+  const liveNow = !["idle", "lobby_open", "finished"].includes(liveTournamentState);
 
   if (liveNow) {
     card.className = "cd-card live"; grid.style.display = "none";
@@ -987,6 +900,7 @@ tickCountdown(); setInterval(tickCountdown, 1000);
 const ROUND_SEQUENCE = ["32","16","8","4","2"];
 const ROUND_SIZE = { "32":32, "16":16, "8":8, "4":4, "2":2 };
 let myMatchUnsub = null, myMatchPath = null, myMatchTimerI = null;
+let oppPresenceUnsub = null;
 let lobbyUnsub = null;
 let tourneyStateUnsub = null;
 
@@ -998,6 +912,7 @@ function safeKey(phone) { return String(phone).replace(/[^0-9a-zA-Z]/g, ""); }
 
 // ── Home-screen wiring: join button + champion banner + spectate link ──
 let homeTourneyListenerAttached = false;
+let liveTournamentState = "idle"; // updated by the listener below, read by tickCountdown()
 function refreshHomeTourneyUI() {
   const s = currentSession;
   document.getElementById("joinRoomWrap").style.display = s ? "flex" : "none";
@@ -1005,6 +920,7 @@ function refreshHomeTourneyUI() {
   homeTourneyListenerAttached = true;
   rtdb.ref("tournament/state").on("value", snap => {
     const state = snap.val() || "idle";
+    liveTournamentState = state;
     const champBanner = document.getElementById("champBanner");
     if (state === "finished") {
       rtdb.ref("tournament/champion").once("value").then(cs => {
@@ -1034,7 +950,7 @@ async function watchFinalIfLive() {
   notif("فینال هێشتا نەگەیشتووە — یاریزانەکان لە دەورە پێشووەکاندان", "inf");
 }
 
-// ── JOIN LOBBY ──
+// ── JOIN LOBBY (capped at 32, first-come-first-served) ──
 async function joinLobby() {
   const s = currentSession;
   if (!s) { go("s-login"); return; }
@@ -1042,6 +958,13 @@ async function joinLobby() {
   const state = stateSnap.val() || "idle";
   if (state !== "idle" && state !== "lobby_open") {
     notif("یاری ئەمشەو ئێستا دەستیپێکردووە یان تەواوبووە", "inf");
+    return;
+  }
+  const lobbySnap = await rtdb.ref("tournament/lobby").once("value");
+  const lobbyVal = lobbySnap.val() || {};
+  const alreadyIn = !!lobbyVal[safeKey(s.phone)];
+  if (!alreadyIn && Object.keys(lobbyVal).length >= 32) {
+    notif("ژووری ئەمشەو پڕە (٣٢ یاریزان) — تکایە شەوی داهاتوو هەوڵبدەرەوە 🙏", "err");
     return;
   }
   await rtdb.ref("tournament/lobby/" + safeKey(s.phone)).set({ phone: s.phone, username: s.username, joinedAt: SRV_TS });
@@ -1057,7 +980,7 @@ function watchLobby() {
   const handler = snap => {
     const val = snap.val() || {};
     const players = Object.values(val);
-    document.getElementById("lobbyCount").textContent = players.length + " / ٣٢";
+    document.getElementById("lobbyCount").textContent = Math.min(players.length, 32) + " / ٣٢";
     const s = currentSession;
     const grid = document.getElementById("lobbyGrid"); grid.innerHTML = "";
     players.forEach(p => {
@@ -1087,19 +1010,20 @@ async function tryTriggerTournamentStart() {
 }
 setInterval(tryTriggerTournamentStart, 15000);
 
-// Admin manual trigger — bypasses the 9PM clock, for testing.
-async function adminForceStart() {
-  if (!confirm("تۆرنمێنت ئێستا بە زۆرەملێ دەستپێدەکات، دڵنیایت؟")) return;
-  await rtdb.ref("tournament/gameDate").set(todayStr());
-  await generateBracketFromLobby();
-  notif("تۆرنمێنت دەستیپێکرد ✓", "suc");
-}
-
+// Builds the round-of-32 bracket from whoever is in the lobby.
+// Qualification is strictly FIRST-COME by joinedAt (server timestamp),
+// not random — if more than 32 joined, only the first 32 play tonight
+// and the rest are told to come back next time.
 async function generateBracketFromLobby() {
   const lobbySnap = await rtdb.ref("tournament/lobby").once("value");
   const lobbyVal = lobbySnap.val() || {};
-  let players = Object.values(lobbyVal).map(p => ({ phone: p.phone, username: p.username, isBot: false }));
-  players = players.sort(() => Math.random() - 0.5).slice(0, 32);
+  const allJoined = Object.values(lobbyVal).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+  const qualifiedRaw = allJoined.slice(0, 32);
+  const overflow = allJoined.slice(32);
+
+  let players = qualifiedRaw.map(p => ({ phone: p.phone, username: p.username, isBot: false }));
+  // Random pairing order (fair matchups) — selection above was first-come, pairing here is shuffled.
+  players = players.sort(() => Math.random() - 0.5);
   let botN = 0;
   while (players.length < 32) {
     botN++;
@@ -1112,11 +1036,22 @@ async function generateBracketFromLobby() {
       status: "waiting", question: null, qStartAt: null, answers: {}, winnerPhone: null, resolvedAt: null
     };
   }
+  const overflowMap = {};
+  overflow.forEach(p => { overflowMap[safeKey(p.phone)] = { username: p.username }; });
+
   await rtdb.ref("tournament").update({
     state: "round_32", currentRound: "32", champion: null,
-    startedAt: SRV_TS, "matches/round_32": matches, lobby: null
+    startedAt: SRV_TS, roundRevealAt: SRV_TS,
+    "matches/round_32": matches, lobby: null, overflow: overflowMap
   });
-  setTimeout(() => activateRoundMatches("32"), 10000);
+  // NOTE: activation of these matches (picking a question, starting the
+  // clock) is NOT scheduled here with a setTimeout — that was the bug
+  // ("says 10 seconds, then nothing happens"): if this one browser tab
+  // closed before the timer fired, no one else would ever pick it up.
+  // Instead, checkRoundActivation() below runs on EVERY connected tab
+  // every 2 seconds and activates the round once 10s have passed
+  // according to Firebase's own server clock — so it fires as long as
+  // any single player anywhere still has the page open, not just this one.
 }
 
 async function activateRoundMatches(round) {
@@ -1129,8 +1064,11 @@ async function activateRoundMatches(round) {
   for (const matchId of Object.keys(matches)) {
     const m = matches[matchId];
     if (m.status !== "waiting") continue;
+    // Per-match transaction claim: if two tabs both notice this match is
+    // ready to activate at the same moment, only one of them wins here.
+    const claim = await roundRef.child(matchId + "/status").transaction(cur => cur === "waiting" ? "activating" : undefined);
+    if (!claim.committed) continue;
     if (!qIds.length) {
-      // no questions configured for this round — auto-advance both as a draw resolved by coin flip
       await resolveNoQuestion(round, matchId, m);
       continue;
     }
@@ -1191,10 +1129,44 @@ function watchForMyMatch() {
         return;
       }
     }
-    // not currently in any live match this round — were we eliminated or waiting?
+    // Not in this round's bracket at all — if we were on the lobby screen
+    // when the bracket generated and the room was already full (32
+    // first-come players), we won't be in any match. Let them know.
+    if (round === "32" && document.getElementById("s-lobby").classList.contains("active")) {
+      const overflowSnap = await rtdb.ref("tournament/overflow/" + safeKey(s.phone)).once("value");
+      if (overflowSnap.exists()) go("s-not-qualified");
+    }
   };
   ref.on("value", handler);
   tourneyStateUnsub = () => ref.off("value", handler);
+}
+
+// If an opponent's presence entry disappears mid-match (closed tab,
+// killed app, lost connection) for longer than the grace period, the
+// remaining player is automatically advanced instead of waiting forever.
+function watchOpponentPresence(round, matchId, oppPhone) {
+  if (oppPresenceUnsub) oppPresenceUnsub();
+  const ref = rtdb.ref("user_presence/" + safeKey(oppPhone));
+  let missingTimer = null;
+  const handler = snap => {
+    if (snap.exists()) {
+      if (missingTimer) { clearTimeout(missingTimer); missingTimer = null; }
+      return;
+    }
+    if (missingTimer) return;
+    missingTimer = setTimeout(async () => {
+      const statusRef = rtdb.ref("tournament/matches/round_" + round + "/" + matchId + "/status");
+      const res = await statusRef.transaction(cur => (cur === "live" || cur === "waiting") ? "resolving" : undefined);
+      if (!res.committed) return; // match already moved on for another reason
+      const s = currentSession;
+      await rtdb.ref("tournament/matches/round_" + round + "/" + matchId).update({
+        status: "done", winnerPhone: s.phone, correct: null, resolvedAt: SRV_TS, disconnectWin: true
+      });
+      maybeAdvanceRound(round);
+    }, 6000); // 6s grace period for brief reconnects/refreshes
+  };
+  ref.on("value", handler);
+  oppPresenceUnsub = () => { ref.off("value", handler); if (missingTimer) clearTimeout(missingTimer); };
 }
 
 function openMatch(round, matchId, m) {
@@ -1207,6 +1179,12 @@ function openMatch(round, matchId, m) {
   const opp = m.players.find(p => p.phone !== s.phone);
   document.getElementById("matchP1").textContent = me.username + " (تۆ)";
   document.getElementById("matchP2").textContent = opp.username;
+
+  // If the opponent is a real (non-bot) player, watch their presence so
+  // that if they close the app / lose internet mid-match, we don't wait
+  // forever — after a short grace period they're auto-counted as the loser.
+  if (!opp.isBot) watchOpponentPresence(round, matchId, opp.phone);
+  else if (oppPresenceUnsub) { oppPresenceUnsub(); oppPresenceUnsub = null; }
 
   if (m.status === "waiting") {
     document.getElementById("revealVs").innerHTML =
@@ -1343,9 +1321,12 @@ function handleMatchDone(round, matchId, mv) {
   const opp = mv.players.find(p => p.phone !== s.phone);
 
   if (myMatchUnsub) { myMatchUnsub(); myMatchUnsub = null; myMatchPath = null; }
+  if (oppPresenceUnsub) { oppPresenceUnsub(); oppPresenceUnsub = null; }
 
   if (!iWon) {
-    document.getElementById("elimSub").textContent = opp.username + " براوە بوو لەم گەڕدا. هیوادارین جاری داهاتوو زیاتر بەختت هەبێت!";
+    document.getElementById("elimSub").textContent = mv.disconnectWin
+      ? opp.username + " لە یاریەکە کشایەوە."
+      : opp.username + " براوە بوو لەم گەڕدا. هیوادارین جاری داهاتوو زیاتر بەختت هەبێت!";
     go("s-eliminated");
     if (tourneyStateUnsub) { tourneyStateUnsub(); tourneyStateUnsub = null; }
     return;
@@ -1361,7 +1342,7 @@ function handleMatchDone(round, matchId, mv) {
   }
 
   document.getElementById("mrEmoji").textContent = "✅";
-  document.getElementById("mrTitle").textContent = "بردتەوە!";
+  document.getElementById("mrTitle").textContent = mv.disconnectWin ? "یاریزانەکەت کشایەوە — تۆ چوویتە پێش!" : "بردتەوە!";
   document.getElementById("mrSub").textContent = "چاوەڕوانی دەوری داهاتوو بکە...";
   go("s-match-result");
   setTimeout(() => {
@@ -1387,6 +1368,9 @@ async function maybeAdvanceRound(round) {
   if (round === "2") {
     const champion = winners[0];
     await rtdb.ref("tournament").update({ state: "finished", champion: { phone: champion.phone, username: champion.username } });
+    await rtdb.ref("tournament_history/" + todayStr()).set({
+      champion: { phone: champion.phone, username: champion.username }, finishedAt: SRV_TS
+    });
     if (!champion.isBot) {
       try {
         const user = await fbGet("/users/" + champion.phone);
@@ -1405,11 +1389,61 @@ async function maybeAdvanceRound(round) {
     };
   }
   await rtdb.ref("tournament").update({
-    state: "round_" + nextRound, currentRound: nextRound,
+    state: "round_" + nextRound, currentRound: nextRound, roundRevealAt: SRV_TS,
     ["matches/round_" + nextRound]: nextMatches
   });
-  setTimeout(() => activateRoundMatches(nextRound), 10000);
+  // (No setTimeout here — see checkRoundActivation watchdog below.)
 }
+
+// ═══════════════════════════════════════════════════════
+//  SELF-HEALING WATCHDOG — runs on every connected tab, every 2s.
+//  This is what actually fixes the "says 10 seconds then nothing
+//  happens" bug: instead of trusting one browser tab's setTimeout to
+//  survive, every open tab independently checks Firebase's server
+//  clock and nudges the game forward if something is overdue. As long
+//  as ANY single player (or the admin panel) has the page open
+//  anywhere, the tournament keeps moving.
+// ═══════════════════════════════════════════════════════
+async function checkRoundActivation() {
+  const snap = await rtdb.ref("tournament").once("value");
+  const t = snap.val();
+  if (!t || !t.currentRound || !t.roundRevealAt || t.state === "finished") return;
+  const elapsed = serverNow() - t.roundRevealAt;
+  if (elapsed < 10000) return;
+  const lockRes = await rtdb.ref("tournament/activated_" + t.currentRound).transaction(cur => cur ? undefined : true);
+  if (!lockRes.committed) return; // some other tab already handled this round's activation
+  activateRoundMatches(t.currentRound);
+}
+
+async function watchdogTick() {
+  const snap = await rtdb.ref("tournament").once("value");
+  const t = snap.val();
+  if (!t || !t.currentRound || t.state === "finished") return;
+  const round = t.currentRound;
+  const matchesSnap = await rtdb.ref("tournament/matches/round_" + round).once("value");
+  const matches = matchesSnap.val() || {};
+  for (const [matchId, m] of Object.entries(matches)) {
+    if (m.status === "live" && m.qStartAt && m.question) {
+      // A match whose timer has clearly run out but never got resolved
+      // (e.g. both players' own tabs were closed) — any watchdog can
+      // still close it out. tryResolveMatch is transaction-guarded so
+      // calling it redundantly from multiple tabs is harmless.
+      const elapsed = (serverNow() - m.qStartAt) / 1000;
+      if (elapsed >= (m.question.timeSeconds + 2)) tryResolveMatch(round, matchId);
+      // Re-arm any bot answer that never got scheduled/fired (e.g. this
+      // tab wasn't the one that originally activated the match).
+      m.players.forEach(p => {
+        if (p.isBot && !((m.answers || {})[safeKey(p.phone)])) {
+          scheduleBotAnswers(round, matchId, m, m.question.timeSeconds);
+        }
+      });
+    }
+  }
+}
+
+setInterval(checkRoundActivation, 2000);
+setInterval(watchdogTick, 3000);
+
 
 // ── FINAL SPECTATE (anyone watching from the home page) ──
 let specUnsub = null;
@@ -1449,121 +1483,6 @@ function startSpectate() {
   };
   ref.on("value", handler);
   specUnsub = () => ref.off("value", handler);
-}
-
-// ═══════════════════════════════════════════════════════
-//  ADMIN — password gate (change ADMIN_PW before going live)
-// ═══════════════════════════════════════════════════════
-const ADMIN_PW = "112233";
-
-function checkAdminPw() {
-  if (document.getElementById("admPw").value === ADMIN_PW) {
-    document.getElementById("admPw").value = "";
-    go("s-admin-tourney");
-    tqInit();
-  } else notif("وشەی نهێنی هەڵەیە!", "err");
-}
-
-// ═══════════════════════════════════════════════════════
-//  ADMIN — tournament question bank
-//  Firebase layout: /tournament_questions/{round}/{pushId}
-//  round is one of: 32, 16, 8, 4, 2
-// ═══════════════════════════════════════════════════════
-const ROUNDS = [
-  { id: "32", label: "دەوری ٣٢" },
-  { id: "16", label: "دەوری ١٦" },
-  { id: "8",  label: "یەکەم ٨" },
-  { id: "4",  label: "نیوەکۆتایی" },
-  { id: "2",  label: "کۆتایی (فاینال)" },
-];
-let tqRound = "32";
-let tqCr = -1;
-
-function tqInit() {
-  const wrap = document.getElementById("roundTabs"); wrap.innerHTML = "";
-  ROUNDS.forEach(r => {
-    const b = document.createElement("button");
-    b.className = "rtab" + (r.id === tqRound ? " on" : "");
-    b.textContent = r.label;
-    b.onclick = () => { tqRound = r.id; tqInit(); };
-    wrap.appendChild(b);
-  });
-  document.getElementById("tqListTitle").textContent = "پرسیارەکانی " + ROUNDS.find(r => r.id === tqRound).label;
-  tqLoadList();
-}
-
-function tqPickCr(i) {
-  tqCr = i;
-  for (let k = 0; k < 4; k++) document.getElementById("tqcr" + k).classList.toggle("on", k === i);
-}
-
-async function tqSave() {
-  const q  = document.getElementById("tqQ").value.trim();
-  const answers = ["tqA0","tqA1","tqA2","tqA3"].map(id => document.getElementById(id).value.trim());
-  const time = parseInt(document.getElementById("tqTime").value, 10) || 19;
-
-  if (!q)                       { notif("پرسیار بنووسە", "err"); return; }
-  if (answers.some(a => !a))    { notif("هەموو ٤ وەڵامەکە پڕبکەرەوە", "err"); return; }
-  if (tqCr < 0)                 { notif("وەڵامی ڕاست دیاری بکە", "err"); return; }
-
-  const btn = document.getElementById("tqSaveBtn");
-  btn.disabled = true; btn.textContent = "⏳ پاراستن...";
-  try {
-    const id = "q_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
-    await fbPut("/tournament_questions/" + tqRound + "/" + id, {
-      question: q, answers, correct: tqCr, timeSeconds: time, createdAt: Date.now()
-    });
-    document.getElementById("tqQ").value = "";
-    ["tqA0","tqA1","tqA2","tqA3"].forEach(id2 => document.getElementById(id2).value = "");
-    document.getElementById("tqTime").value = "19";
-    for (let k = 0; k < 4; k++) document.getElementById("tqcr" + k).classList.remove("on");
-    tqCr = -1;
-    notif("✅ پرسیار زیادکرا", "suc");
-    tqLoadList();
-  } catch (e) {
-    notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
-  }
-  btn.disabled = false; btn.textContent = "💾 زیادکردنی پرسیار";
-}
-
-async function tqLoadList() {
-  const list = document.getElementById("tqList");
-  list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:14px 0">⏳ بارکردن...</div>';
-  try {
-    const data = await fbGet("/tournament_questions/" + tqRound);
-    const entries = data ? Object.entries(data) : [];
-    document.getElementById("tqCount").textContent = entries.length + " پرسیار";
-    if (!entries.length) {
-      list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:16px 0">هێشتا پرسیار زیاد نەکراوە بۆ ئەم دەورە</p>';
-      return;
-    }
-    list.innerHTML = "";
-    entries.sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0)).forEach(([id, qi]) => {
-      if (!qi || !qi.question) return;
-      const L = ["A","B","C","D"];
-      const d = document.createElement("div"); d.className = "tq-item";
-      d.innerHTML = `
-        <div style="flex:1;min-width:0">
-          <div style="font-size:.84rem;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-            ${qi.question}</div>
-          <div style="font-size:.7rem;color:var(--muted);margin-top:2px">
-            ⏱ ${qi.timeSeconds || 19}چ &nbsp;|&nbsp; ڕاست: ${L[qi.correct]} — ${(qi.answers||[])[qi.correct]||""}</div>
-        </div>
-        <button class="tq-del" onclick="tqDelete('${id}')">🗑</button>`;
-      list.appendChild(d);
-    });
-  } catch (e) {
-    list.innerHTML = '<p style="color:var(--ng);text-align:center;padding:16px 0">هەڵەیەک ڕوویدا لە بارکردن</p>';
-  }
-}
-
-async function tqDelete(id) {
-  if (!confirm("دڵنیایت لە سڕینەوەی ئەم پرسیارە؟")) return;
-  try {
-    await fbDelete("/tournament_questions/" + tqRound + "/" + id);
-    notif("پرسیار سڕایەوە ✓", "suc");
-    tqLoadList();
-  } catch (e) { notif("هەڵەیەک ڕوویدا", "err"); }
 }
 
 // ═══════════════════════════════════════════════════════
