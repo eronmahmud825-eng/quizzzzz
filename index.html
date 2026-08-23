@@ -3,1498 +3,608 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>کوئیز گەیم — ئۆنلاین</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>ئەدمین — کوئیز گەیم</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800;900&family=Oxanium:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 :root{
-  --bg:#07080f; --surface:#0f1120;
-  --glass:rgba(255,255,255,.06); --gb:rgba(255,255,255,.11);
-  --gold:#f0b429; --red:#e63946; --blue:#1d4ed8;
-  --ok:#06d6a0; --ng:#e63946; --purple:#7c3aed;
-  --orange:#f97316; --cyan:#06b6d4; --pink:#ec4899;
-  --text:#f0f0f0; --muted:rgba(240,240,240,.45);
+  --bg:#07080f;--glass:rgba(255,255,255,.06);--gb:rgba(255,255,255,.11);
+  --gold:#f0b429;--red:#e63946;--blue:#1d4ed8;--ok:#06d6a0;
+  --purple:#7c3aed;--text:#f0f0f0;--muted:rgba(240,240,240,.45);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{
-  font-family:'Noto Sans Arabic',sans-serif;
-  background:var(--bg); color:var(--text);
-  min-height:100vh; overflow-x:hidden; line-height:1.6;
-  -webkit-font-smoothing:antialiased;
-}
+body{font-family:'Noto Sans Arabic',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;-webkit-font-smoothing:antialiased;}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(ellipse 70% 50% at 15% 15%,rgba(230,57,70,.12),transparent 55%),
-             radial-gradient(ellipse 60% 45% at 85% 85%,rgba(29,78,216,.14),transparent 55%);}
-body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:
-    repeating-linear-gradient(0deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px),
-    repeating-linear-gradient(90deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px);}
+  background:radial-gradient(ellipse 70% 50% at 15% 15%,rgba(124,58,237,.1),transparent 55%),
+             radial-gradient(ellipse 60% 45% at 85% 85%,rgba(29,78,216,.1),transparent 55%);}
 
-.screen{display:none;position:relative;z-index:1;min-height:100vh;padding:28px 16px 50px;
+/* LOGIN */
+.screen{display:none;position:relative;z-index:1;min-height:100vh;padding:24px 16px;
   flex-direction:column;align-items:center;justify-content:center;animation:fi .35s ease;}
 .screen.active{display:flex;}
-.screen.top{justify-content:flex-start;padding-top:70px;}
-@keyframes fi{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--glass);border:1.5px solid var(--gb);border-radius:20px;padding:28px;
+  backdrop-filter:blur(20px);width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.card h2{font-size:1.35rem;font-weight:800;margin-bottom:16px;text-align:center;color:var(--gold);}
+.fg{margin-bottom:13px;}
+.fg label{display:block;font-size:.83rem;color:var(--muted);margin-bottom:5px;}
+.fg input,.fg select,.fg textarea{
+  width:100%;padding:11px 15px;background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);
+  font-family:'Noto Sans Arabic',sans-serif;font-size:.95rem;outline:none;transition:border-color .2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--gold);}
+.fg select option{background:#111;color:#fff;}
+.fg textarea{resize:vertical;min-height:80px;}
 
-.logo{text-align:center;margin-bottom:8px;}
-.logo h1{font-family:'Oxanium',sans-serif;font-size:clamp(2rem,7vw,3.4rem);font-weight:800;
-  letter-spacing:5px;
-  background:linear-gradient(135deg,#fff,var(--gold) 45%,var(--red));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 0 32px rgba(240,180,41,.4));}
-.logo p{font-size:.82rem;color:var(--muted);letter-spacing:6px;margin-top:4px;}
-
-/* LIVE ONLINE PILL */
-.online-pill{display:inline-flex;align-items:center;gap:8px;margin:16px 0 26px;
-  padding:8px 20px;border-radius:50px;background:rgba(6,214,160,.1);
-  border:1.5px solid rgba(6,214,160,.35);font-size:.86rem;font-weight:700;color:#6effd8;
-  backdrop-filter:blur(10px);}
-.dot-live{width:9px;height:9px;border-radius:50%;background:var(--ok);
-  box-shadow:0 0 8px var(--ok);animation:pulse-dot 1.4s infinite;}
-@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
-.online-pill strong{font-family:'Oxanium',sans-serif;font-size:1.05rem;color:var(--ok);}
-
-/* COUNTDOWN CARD */
-.cd-card{background:var(--glass);border:1.5px solid var(--gb);border-radius:24px;
-  padding:32px 24px;backdrop-filter:blur(20px);width:100%;max-width:560px;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:center;margin-bottom:22px;
-  position:relative;overflow:hidden;}
-.cd-card.live{border-color:rgba(240,180,41,.55);box-shadow:0 0 60px rgba(240,180,41,.18),0 20px 60px rgba(0,0,0,.5);}
-.cd-card.off{border-color:rgba(230,57,70,.3);}
-.cd-eyebrow{font-size:.76rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
-.cd-nextday{font-size:1.05rem;font-weight:700;color:var(--gold);margin-bottom:18px;}
-.cd-grid{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;}
-.cd-unit{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);
-  border-radius:14px;padding:14px 6px;min-width:74px;flex:1;max-width:100px;}
-.cd-num{font-family:'Oxanium',sans-serif;font-size:clamp(1.8rem,7vw,2.5rem);font-weight:800;
-  color:var(--gold);line-height:1;font-variant-numeric:tabular-nums;}
-.cd-lbl{font-size:.7rem;color:var(--muted);margin-top:6px;letter-spacing:1px;}
-.cd-live-badge{display:none;padding:14px 26px;border-radius:16px;
-  background:linear-gradient(135deg,rgba(240,180,41,.22),rgba(230,57,70,.18));
-  border:2px solid var(--gold);font-family:'Oxanium',sans-serif;font-weight:800;
-  font-size:1.3rem;color:var(--gold);letter-spacing:2px;}
-.cd-live-badge .pulse-ring{display:inline-block;width:10px;height:10px;border-radius:50%;
-  background:var(--red);margin-left:8px;animation:pulse-dot 1s infinite;}
-.cd-off-badge{display:none;padding:12px 24px;border-radius:14px;
-  background:rgba(230,57,70,.1);border:1.5px solid rgba(230,57,70,.35);
-  color:#ffaaaa;font-weight:700;font-size:.95rem;}
-
-/* WEEK STRIP */
-.week-strip{display:flex;gap:6px;justify-content:center;margin-top:20px;flex-wrap:wrap;}
-.wchip{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-  font-size:.72rem;font-weight:800;font-family:'Oxanium',sans-serif;
-  background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);color:var(--muted);}
-.wchip.play{background:rgba(240,180,41,.1);border-color:rgba(240,180,41,.35);color:var(--gold);}
-.wchip.off{background:rgba(230,57,70,.08);border-color:rgba(230,57,70,.3);color:#ff9a9a;
-  text-decoration:line-through;}
-.wchip.today{outline:2px solid #fff;outline-offset:2px;}
+/* ADMIN LAYOUT */
+#s-admin{justify-content:flex-start;padding-top:0;}
+.admin-wrap{display:flex;min-height:100vh;width:100%;}
+.sidebar{width:220px;flex-shrink:0;background:rgba(255,255,255,.03);
+  border-left:1px solid rgba(255,255,255,.07);padding:22px 14px;
+  display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+@media(max-width:640px){.sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;padding:10px;}}
+.sidebar h3{font-family:'Oxanium',sans-serif;font-size:.7rem;letter-spacing:3px;
+  color:var(--muted);text-transform:uppercase;margin-bottom:8px;padding:0 4px;}
+.nav-btn{width:100%;padding:10px 14px;border:none;border-radius:10px;text-align:right;
+  background:transparent;color:var(--muted);font-family:'Noto Sans Arabic',sans-serif;
+  font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.nav-btn:hover,.nav-btn.active{background:rgba(255,255,255,.07);color:var(--text);}
+.nav-btn.active{border-right:3px solid var(--gold);color:var(--gold);}
+.main-area{flex:1;padding:24px 20px;overflow-y:auto;}
+.panel{display:none;}
+.panel.active{display:block;}
+.panel-title{font-family:'Oxanium',sans-serif;font-size:1.2rem;font-weight:800;
+  color:var(--gold);margin-bottom:18px;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;}
 
 /* BUTTONS */
-.mwrap{display:flex;flex-direction:column;gap:14px;width:100%;max-width:400px;margin-top:6px;}
-.btn{position:relative;padding:17px 30px;border:none;border-radius:14px;
-  font-family:'Noto Sans Arabic',sans-serif;font-size:1.05rem;font-weight:700;
-  cursor:pointer;overflow:hidden;transition:transform .2s,box-shadow .2s;}
-.btn::before{content:'';position:absolute;inset:0;
-  background:linear-gradient(160deg,rgba(255,255,255,.13),transparent);}
-.btn:hover{transform:translateY(-3px);}
-.btn:active{transform:translateY(1px);}
-.btn-gold {background:linear-gradient(135deg,#c28a00,var(--gold)); box-shadow:0 8px 28px rgba(240,180,41,.4); color:#1a1000;}
-.btn-red  {background:linear-gradient(135deg,#b91c2a,var(--red));  box-shadow:0 8px 28px rgba(230,57,70,.45); color:#fff;}
-.btn-blue {background:linear-gradient(135deg,#1034a6,var(--blue)); box-shadow:0 8px 28px rgba(29,78,216,.45); color:#fff;}
-.btn-ghost{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);color:var(--text);box-shadow:none;}
+.btn{padding:10px 20px;border:none;border-radius:10px;font-family:'Noto Sans Arabic',sans-serif;
+  font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn:hover{transform:translateY(-2px);}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
-.btn-link{background:none;border:none;color:var(--gold);font-family:'Noto Sans Arabic',sans-serif;
-  font-size:.86rem;cursor:pointer;text-decoration:underline;padding:6px;}
+.btn-gold  {background:linear-gradient(135deg,#c28a00,var(--gold));color:#1a1000;}
+.btn-red   {background:linear-gradient(135deg,#b91c2a,var(--red));color:#fff;}
+.btn-blue  {background:linear-gradient(135deg,#1034a6,var(--blue));color:#fff;}
+.btn-ok    {background:linear-gradient(135deg,#009060,var(--ok));color:#001a0f;}
+.btn-purple{background:linear-gradient(135deg,#5b21b6,var(--purple));color:#fff;}
+.btn-ghost {background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);color:var(--text);}
+.btn-sm    {padding:6px 12px;font-size:.78rem;border-radius:8px;}
 
-.bk{position:fixed;top:16px;right:16px;z-index:50;padding:8px 18px;border-radius:50px;
-  border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);
-  backdrop-filter:blur(10px);color:var(--muted);
-  font-family:'Noto Sans Arabic',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s;}
-.bk:hover{background:rgba(255,255,255,.12);color:#fff;}
+/* STAT CARDS */
+.stat-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.stat-c{flex:1;min-width:120px;background:var(--glass);border:1.5px solid var(--gb);
+  border-radius:14px;padding:14px;text-align:center;}
+.stat-c .sv{font-family:'Oxanium',sans-serif;font-size:1.8rem;font-weight:800;color:var(--gold);}
+.stat-c .sl{font-size:.7rem;color:var(--muted);margin-top:4px;}
 
-.note{margin-top:20px;max-width:460px;text-align:center;font-size:.78rem;color:var(--muted);
-  padding:12px 18px;border-radius:12px;background:rgba(255,255,255,.03);
-  border:1px solid rgba(255,255,255,.07);}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:.84rem;}
+.tbl th{text-align:right;padding:9px 10px;color:var(--muted);font-weight:700;
+  border-bottom:1px solid rgba(255,255,255,.08);}
+.tbl td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05);}
+.tbl tr:hover td{background:rgba(255,255,255,.03);}
 
-/* HOME MINI DASHBOARD (logged-in preview) */
-.mini-dash{width:100%;max-width:400px;background:var(--glass);border:1.5px solid var(--gb);
-  border-radius:18px;padding:16px 18px;backdrop-filter:blur(16px);margin-bottom:14px;}
-.mini-dash-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-.mini-avatar{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;
-  justify-content:center;font-size:1.4rem;background:linear-gradient(135deg,rgba(240,180,41,.25),rgba(230,57,70,.2));
-  border:2px solid rgba(240,180,41,.5);}
-.mini-name{font-size:1.02rem;font-weight:800;color:#fff;}
-.mini-sub{font-size:.72rem;color:var(--muted);margin-top:1px;}
-.mini-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.mini-stat{text-align:center;background:rgba(255,255,255,.04);border-radius:10px;padding:8px 4px;}
-.mini-stat .mv{font-family:'Oxanium',sans-serif;font-size:1.15rem;font-weight:800;color:var(--gold);}
-.mini-stat .ml{font-size:.64rem;color:var(--muted);margin-top:2px;}
+/* BADGE */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:700;}
+.badge-ok    {background:rgba(6,214,160,.18);border:1px solid rgba(6,214,160,.4);color:#6effd8;}
+.badge-ng    {background:rgba(230,57,70,.18);border:1px solid rgba(230,57,70,.4);color:#ffaaaa;}
+.badge-wait  {background:rgba(240,180,41,.15);border:1px solid rgba(240,180,41,.35);color:var(--gold);}
+.badge-live  {background:rgba(230,57,70,.15);border:1px solid rgba(230,57,70,.4);color:#ffaaaa;
+  animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
 
-.admin-link{margin-top:22px;background:none;border:none;color:var(--muted);
-  font-size:.74rem;cursor:pointer;padding:8px;opacity:.55;transition:opacity .2s;}
-.admin-link:hover{opacity:1;color:var(--gold);}
+/* MATCH BRACKET */
+.bracket{display:flex;gap:16px;overflow-x:auto;padding-bottom:12px;}
+.bround{min-width:180px;}
+.bround-title{font-size:.72rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:10px;font-family:'Oxanium',sans-serif;}
+.bmatch{background:var(--glass);border:1.5px solid var(--gb);border-radius:10px;
+  padding:10px;margin-bottom:8px;font-size:.8rem;}
+.bmatch.live{border-color:rgba(230,57,70,.5);}
+.bmatch.done{border-color:rgba(6,214,160,.35);}
+.bplayer{padding:3px 0;display:flex;justify-content:space-between;align-items:center;}
+.bplayer.winner{color:var(--ok);font-weight:800;}
+.bplayer.loser{opacity:.4;}
 
-/* ADMIN TOURNAMENT QUESTION BANK */
-.round-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:16px 0 20px;}
-.rtab{padding:9px 18px;border-radius:50px;border:2px solid rgba(255,255,255,.12);
-  background:rgba(255,255,255,.05);color:var(--muted);font-family:'Oxanium',sans-serif;
-  font-weight:800;font-size:.92rem;cursor:pointer;transition:all .2s;}
-.rtab.on{border-color:var(--gold);background:rgba(240,180,41,.14);color:var(--gold);}
-.fg textarea{width:100%;padding:12px 16px;background:rgba(255,255,255,.07);
-  border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);
-  font-family:'Noto Sans Arabic',sans-serif;font-size:.95rem;outline:none;min-height:76px;resize:vertical;}
-.fg textarea:focus{border-color:var(--gold);}
+/* Q ANSWER INPUTS */
 .a2grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.crgrp{display:flex;gap:8px;flex-wrap:wrap;}
-.crlbl{cursor:pointer;padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.04);font-family:'Oxanium',sans-serif;font-weight:700;transition:all .2s;}
+.crgrp{display:flex;gap:7px;flex-wrap:wrap;}
+.crlbl{cursor:pointer;padding:7px 14px;border-radius:8px;
+  border:2px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+  font-family:'Oxanium',sans-serif;font-weight:700;transition:all .2s;}
 .crlbl.on{border-color:var(--ok);background:rgba(6,214,160,.12);color:var(--ok);}
-.divider{border:none;border-top:1px solid rgba(255,255,255,.08);margin:22px 0;}
-.tq-item{padding:10px 13px;background:rgba(255,255,255,.04);border-radius:9px;
-  border:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;
-  align-items:center;gap:10px;}
-.tq-del{background:rgba(230,57,70,.14);border:1px solid rgba(230,57,70,.3);color:#ff8888;
-  padding:4px 10px;border-radius:7px;cursor:pointer;font-size:.76rem;flex-shrink:0;}
-.tq-del:hover{background:rgba(230,57,70,.3);}
+.qrow{display:flex;justify-content:space-between;align-items:center;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:9px;padding:9px 12px;margin-bottom:7px;gap:10px;font-size:.82rem;}
+.qdel{background:rgba(230,57,70,.14);border:1px solid rgba(230,57,70,.3);color:#ff8888;
+  padding:4px 10px;border-radius:7px;cursor:pointer;font-size:.75rem;flex-shrink:0;}
+.qdel:hover{background:rgba(230,57,70,.3);}
 
-/* TOURNAMENT — LOBBY */
-.lobby-count{font-family:'Oxanium',sans-serif;font-size:2.4rem;font-weight:800;color:var(--gold);text-align:center;}
-.lobby-sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:18px;}
-.lobby-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;
-  width:100%;max-width:700px;margin-top:10px;}
-.lobby-chip{padding:9px 10px;border-radius:10px;background:var(--glass);border:1.5px solid var(--gb);
-  font-size:.8rem;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.lobby-chip.me{border-color:var(--gold);color:var(--gold);}
-.lobby-chip.bot{opacity:.55;}
+/* ANNOUNCE */
+.ann-box{background:var(--glass);border:1.5px solid var(--gb);border-radius:14px;padding:16px;margin-bottom:14px;}
+.ann-box h4{color:var(--gold);font-size:.9rem;margin-bottom:10px;}
 
-/* BRACKET REVEAL */
-.bracket-vs{display:flex;align-items:center;gap:16px;justify-content:center;margin:24px 0;}
-.bvs-p{padding:16px 22px;border-radius:16px;background:var(--glass);border:2px solid var(--gb);
-  min-width:130px;text-align:center;font-weight:800;}
-.bvs-p.me{border-color:var(--gold);box-shadow:0 0 24px rgba(240,180,41,.25);}
-.bvs-x{font-family:'Oxanium',sans-serif;font-size:1.6rem;color:var(--red);font-weight:800;}
-
-/* MATCH SCREEN */
-.match-hdr{display:flex;align-items:center;justify-content:center;gap:18px;width:100%;max-width:700px;margin-bottom:16px;}
-.match-p{flex:1;text-align:center;padding:12px 8px;border-radius:14px;background:var(--glass);
-  border:2px solid var(--gb);font-weight:800;font-size:.92rem;}
-.match-p.leading{border-color:var(--ok);}
-.match-vs-lbl{font-family:'Oxanium',sans-serif;color:var(--red);font-weight:800;}
-.match-timer{width:78px;height:78px;position:relative;margin:0 auto 14px;}
-.match-timer svg{width:78px;height:78px;transform:rotate(-90deg);}
-.match-timer .tn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-family:'Oxanium',sans-serif;font-size:1.5rem;font-weight:800;}
-.match-q{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:16px;
-  padding:20px;font-size:1.08rem;font-weight:700;text-align:center;width:100%;max-width:700px;margin-bottom:14px;}
-.match-agrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:700px;}
-@media(max-width:440px){.match-agrid{grid-template-columns:1fr;}}
-.match-ab{padding:14px;border-radius:12px;border:2px solid rgba(255,255,255,.11);background:rgba(255,255,255,.05);
-  color:var(--text);font-family:'Noto Sans Arabic',sans-serif;font-size:.94rem;font-weight:600;
-  cursor:pointer;transition:all .18s;text-align:center;}
-.match-ab:hover:not(:disabled){border-color:var(--blue);background:rgba(29,78,216,.16);}
-.match-ab:disabled{cursor:default;}
-.match-ab.mine{border-color:#fff!important;background:rgba(255,255,255,.14)!important;}
-.match-ab.ok{border-color:var(--ok)!important;background:rgba(6,214,160,.16)!important;}
-.match-ab.bad{border-color:var(--ng)!important;background:rgba(230,57,70,.16)!important;}
-.match-status{text-align:center;font-size:.85rem;color:var(--muted);min-height:18px;margin-top:4px;}
-
-/* RESULT / WAIT / ELIM SCREENS */
-.result-emoji{font-size:4rem;text-align:center;margin-bottom:10px;}
-.result-title{font-size:1.6rem;font-weight:900;text-align:center;margin-bottom:8px;}
-.result-sub{color:var(--muted);text-align:center;font-size:.9rem;max-width:400px;}
-
-/* CHAMPION BANNER ON HOME */
-.champ-banner{width:100%;max-width:560px;background:linear-gradient(135deg,rgba(240,180,41,.18),rgba(230,57,70,.12));
-  border:2px solid rgba(240,180,41,.55);border-radius:20px;padding:20px;text-align:center;margin-bottom:18px;}
-.champ-banner .ce{font-size:2.4rem;}
-.champ-banner .cn{font-family:'Oxanium',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);margin-top:6px;}
-
-/* CARD / FORMS */
-.card{background:var(--glass);border:1.5px solid var(--gb);border-radius:20px;
-  padding:28px;backdrop-filter:blur(20px);width:100%;max-width:420px;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);}
-.card h2{font-size:1.35rem;font-weight:800;margin-bottom:6px;text-align:center;color:var(--gold);}
-.card .sub{font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:20px;}
-.fg{margin-bottom:14px;position:relative;}
-.fg label{display:block;font-size:.84rem;color:var(--muted);margin-bottom:6px;}
-.fg input{width:100%;padding:12px 16px;background:rgba(255,255,255,.07);
-  border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);
-  font-family:'Noto Sans Arabic',sans-serif;font-size:.97rem;outline:none;
-  transition:border-color .2s;direction:ltr;text-align:right;}
-.fg input:focus{border-color:var(--gold);}
-.fg input.err{border-color:var(--ng);}
-.fg .eyebtn{position:absolute;left:12px;top:38px;background:none;border:none;
-  color:var(--muted);cursor:pointer;font-size:.95rem;}
-.fg-msg{font-size:.74rem;color:var(--ng);margin-top:5px;min-height:14px;}
-.otp-row{display:flex;gap:9px;justify-content:center;direction:ltr;margin:10px 0 6px;}
-.otp-row input{width:48px;height:56px;text-align:center;font-family:'Oxanium',sans-serif;
-  font-size:1.5rem;font-weight:800;background:rgba(255,255,255,.07);
-  border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:var(--gold);outline:none;}
-.otp-row input:focus{border-color:var(--gold);}
-.dev-box{background:rgba(240,180,41,.09);border:1.5px dashed rgba(240,180,41,.5);
-  border-radius:12px;padding:12px 16px;text-align:center;margin-bottom:16px;font-size:.84rem;}
-.dev-box .dcode{font-family:'Oxanium',sans-serif;font-size:1.6rem;font-weight:800;
-  color:var(--gold);letter-spacing:6px;margin-top:6px;}
-.dev-tag{display:inline-block;font-size:.65rem;background:var(--purple);color:#fff;
-  padding:2px 9px;border-radius:20px;margin-bottom:6px;letter-spacing:1px;}
-
-/* DASHBOARD */
-.dash-head{display:flex;flex-direction:column;align-items:center;margin-bottom:22px;}
-.avatar{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:2.6rem;background:linear-gradient(135deg,rgba(240,180,41,.25),rgba(230,57,70,.2));
-  border:3px solid rgba(240,180,41,.5);margin-bottom:12px;box-shadow:0 0 30px rgba(240,180,41,.2);}
-.dash-name{font-size:1.35rem;font-weight:800;color:#fff;}
-.dash-phone{font-size:.8rem;color:var(--muted);direction:ltr;margin-top:2px;}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;max-width:560px;margin-bottom:22px;}
-.stat-card{background:var(--glass);border:1.5px solid var(--gb);border-radius:16px;
-  padding:16px 8px;text-align:center;}
-.stat-card .sv{font-family:'Oxanium',sans-serif;font-size:1.7rem;font-weight:800;color:var(--gold);}
-.stat-card .sl{font-size:.7rem;color:var(--muted);margin-top:4px;}
-.hist-wrap{width:100%;max-width:560px;}
-.hist-title{font-size:.9rem;color:var(--muted);font-weight:700;margin-bottom:10px;text-align:center;}
-.hist-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:26px 0;
-  background:var(--glass);border:1.5px dashed rgba(255,255,255,.12);border-radius:14px;}
-.hist-item{display:flex;justify-content:space-between;align-items:center;
-  background:var(--glass);border:1.5px solid var(--gb);border-radius:12px;
-  padding:12px 16px;margin-bottom:8px;font-size:.86rem;}
-
-.notif{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);
-  padding:12px 24px;border-radius:50px;font-weight:700;font-size:.9rem;z-index:300;
-  transition:transform .3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center;}
+/* NOTIF */
+.notif{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  padding:11px 22px;border-radius:50px;font-weight:700;font-size:.88rem;z-index:300;
+  transition:transform .3s;pointer-events:none;white-space:nowrap;}
 .notif.show{transform:translateX(-50%) translateY(0);}
 .notif.suc{background:var(--ok);color:#001a0f;}
-.notif.err{background:var(--ng);color:#fff;}
+.notif.err{background:var(--red);color:#fff;}
 .notif.inf{background:var(--blue);color:#fff;}
+.divider{border:none;border-top:1px solid rgba(255,255,255,.08);margin:16px 0;}
 </style>
 </head>
 <body>
 
-<!-- HOME -->
-<div id="s-home" class="screen active">
-  <div class="logo">
-    <h1>QUIZ GAME</h1>
-    <p>کوئیز گەیم — ئۆنلاین</p>
-  </div>
-
-  <div class="online-pill">
-    <span class="dot-live"></span>
-    <span id="onlineCount"><strong>—</strong> ئۆنلاین ئێستا</span>
-  </div>
-
-  <div class="cd-card" id="cdCard">
-    <div class="cd-eyebrow">یاری داهاتوو</div>
-    <div class="cd-nextday" id="cdNextDay">—</div>
-    <div class="cd-grid" id="cdGrid">
-      <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-lbl">ڕۆژ</div></div>
-      <div class="cd-unit"><div class="cd-num" id="cdH">00</div><div class="cd-lbl">کاژێر</div></div>
-      <div class="cd-unit"><div class="cd-num" id="cdM">00</div><div class="cd-lbl">خولەک</div></div>
-      <div class="cd-unit"><div class="cd-num" id="cdS">00</div><div class="cd-lbl">چرکە</div></div>
+<!-- LOGIN -->
+<div id="s-login" class="screen active">
+  <div class="card">
+    <h2>⚙️ ئەدمین — چوونەژوورەوە</h2>
+    <div class="fg"><label>وشەی نهێنی ئەدمین</label>
+      <input type="password" id="aPw" placeholder="••••••" onkeydown="if(event.key==='Enter')adminLogin()"/>
     </div>
-    <div class="cd-live-badge" id="cdLiveBadge">🔴 یاری ئێستا چالاکە<span class="pulse-ring"></span></div>
-    <div class="cd-off-badge" id="cdOffBadge">😴 ئەمشەو هەینییە — یاری نییە</div>
-    <div class="week-strip" id="weekStrip"></div>
+    <button class="btn btn-gold" onclick="adminLogin()" style="width:100%">داخلبوون</button>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="window.location.href='index.html'"
+        style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem">
+        ← گەڕانەوە بۆ سایت
+      </button>
+    </div>
   </div>
+</div>
 
-  <div class="champ-banner" id="champBanner" style="display:none">
-    <div class="ce">🏆</div>
-    <div>براوەی ئەمشەو</div>
-    <div class="cn" id="champName">—</div>
-  </div>
+<!-- ADMIN DASHBOARD -->
+<div id="s-admin" class="screen">
+  <div class="admin-wrap">
 
-  <div class="mwrap" id="joinRoomWrap" style="display:none;margin-bottom:14px">
-    <button class="btn btn-red" id="joinRoomBtn" onclick="joinLobby()">🎮 &nbsp; چوونە ژووری یاری ئەمشەو</button>
-  </div>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div>
+        <h3>مەنیو</h3>
+        <button class="nav-btn active" onclick="showPanel('p-overview')">📊 گشتی</button>
+        <button class="nav-btn" onclick="showPanel('p-users')">👥 بەکارهێنەران</button>
+        <button class="nav-btn" onclick="showPanel('p-questions')">❓ پرسیارەکان</button>
+        <button class="nav-btn" onclick="showPanel('p-tournament')">🏆 تۆرنمێنت</button>
+        <button class="nav-btn" onclick="showPanel('p-announce')">📢 ئاگادارکردنەوە</button>
+      </div>
+      <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)">
+        <button class="nav-btn" onclick="adminLogout()">🚪 دەرچوون</button>
+      </div>
+    </div>
 
-  <div class="mwrap" id="homeAuthBtns">
-    <button class="btn btn-gold" onclick="go('s-login')">🔑 &nbsp; چوونەژوورەوە</button>
-    <button class="btn btn-ghost" onclick="go('s-register')">✨ &nbsp; خۆتۆمارکردن</button>
-  </div>
+    <!-- MAIN -->
+    <div class="main-area">
 
-  <div id="homeUserBtns" style="display:none;width:100%;max-width:400px;">
-    <div class="mini-dash">
-      <div class="mini-dash-top">
-        <div class="mini-avatar">🎮</div>
-        <div>
-          <div class="mini-name" id="miniName">—</div>
-          <div class="mini-sub">بەخێربێیتەوە</div>
+      <!-- OVERVIEW -->
+      <div id="p-overview" class="panel active">
+        <div class="panel-title">📊 گشتی</div>
+        <div class="stat-row">
+          <div class="stat-c"><div class="sv" id="ovUsers">—</div><div class="sl">بەکارهێنەر</div></div>
+          <div class="stat-c"><div class="sv" id="ovOnline">—</div><div class="sl">ئۆنلاین</div></div>
+          <div class="stat-c"><div class="sv" id="ovQuestions">—</div><div class="sl">پرسیار</div></div>
+          <div class="stat-c"><div class="sv" id="ovState">—</div><div class="sl">حاڵەتی یاری</div></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ok"    onclick="openLobbyNow()">🔓 ژووری یاری بکەرەوە</button>
+          <button class="btn btn-red"   onclick="forceEndGame()">⛔ کۆتایی پێهێنانی یاری</button>
+          <button class="btn btn-ghost" onclick="loadOverview()">🔄 نوێکردنەوە</button>
+        </div>
+        <div class="divider"></div>
+        <div id="ovLog" style="font-size:.8rem;color:var(--muted);line-height:2"></div>
+      </div>
+
+      <!-- USERS -->
+      <div id="p-users" class="panel">
+        <div class="panel-title">👥 بەکارهێنەران</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <input type="text" id="userSearch" placeholder="گەڕان بە ناو یان ژمارە..."
+            style="flex:1;padding:9px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:9px;color:var(--text);font-family:'Noto Sans Arabic',sans-serif;font-size:.88rem;outline:none"
+            oninput="filterUsers()"/>
+          <button class="btn btn-ghost btn-sm" onclick="loadUsers()">🔄</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>ناو</th><th>ژمارە</th><th>🏆</th><th>یاری</th><th>بردنەوە</th><th>کردار</th></tr></thead>
+            <tbody id="userTbody"></tbody>
+          </table>
         </div>
       </div>
-      <div class="mini-stats">
-        <div class="mini-stat"><div class="mv" id="miniTrophies">0</div><div class="ml">🏆 مۆدال</div></div>
-        <div class="mini-stat"><div class="mv" id="miniGames">0</div><div class="ml">🎮 یاری</div></div>
-        <div class="mini-stat"><div class="mv" id="miniWins">0</div><div class="ml">✅ بردنەوە</div></div>
+
+      <!-- QUESTIONS -->
+      <div id="p-questions" class="panel">
+        <div class="panel-title">❓ بەڕێوەبردنی پرسیارەکان</div>
+
+        <!-- Add Question -->
+        <div class="ann-box">
+          <h4>➕ زیادکردنی پرسیاری نوێ</h4>
+          <div class="fg"><label>دەوری تۆرنمێنت</label>
+            <select id="qRound">
+              <option value="32">دەوری ٣٢</option>
+              <option value="16">دەوری ١٦</option>
+              <option value="8">چوارەکەم (٨)</option>
+              <option value="4">نیوفینال (٤)</option>
+              <option value="2">فینال (٢)</option>
+            </select>
+          </div>
+          <div class="fg"><label>پرسیار</label>
+            <textarea id="qText" placeholder="پرسیار بنووسە..."></textarea>
+          </div>
+          <div class="fg"><label>وەڵامەکان (A و B پێویستن)</label>
+            <div class="a2grid">
+              <input type="text" id="qa0" placeholder="A"/>
+              <input type="text" id="qa1" placeholder="B"/>
+              <input type="text" id="qa2" placeholder="C — ئارەزوومەندانە"/>
+              <input type="text" id="qa3" placeholder="D — ئارەزوومەندانە"/>
+            </div>
+          </div>
+          <div class="fg"><label>وەڵامی ڕاست</label>
+            <div class="crgrp">
+              <label class="crlbl" id="qcr0" onclick="pickQCr(0)">A</label>
+              <label class="crlbl" id="qcr1" onclick="pickQCr(1)">B</label>
+              <label class="crlbl" id="qcr2" onclick="pickQCr(2)">C</label>
+              <label class="crlbl" id="qcr3" onclick="pickQCr(3)">D</label>
+            </div>
+          </div>
+          <div class="fg"><label>کاتی وەڵامدان (چرکە)</label>
+            <input type="number" id="qTime" value="19" min="10" max="60" style="width:120px"/>
+          </div>
+          <button class="btn btn-gold" onclick="addQuestion()">💾 پاراستن</button>
+        </div>
+
+        <!-- Question List -->
+        <div class="fg"><label>پرسیارەکانی</label>
+          <select id="qRoundFilter" onchange="loadQuestions()">
+            <option value="32">دەوری ٣٢</option>
+            <option value="16">دەوری ١٦</option>
+            <option value="8">چوارەکەم</option>
+            <option value="4">نیوفینال</option>
+            <option value="2">فینال</option>
+          </select>
+        </div>
+        <div id="qList" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
-    </div>
-    <div class="mwrap">
-      <button class="btn btn-gold" onclick="go('s-dashboard')">🏠 &nbsp; داشبۆرد و مێژووی تەواو</button>
-    </div>
-  </div>
 
-  <div class="note" id="homeNote">
-    یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.
-  </div>
-</div>
+      <!-- TOURNAMENT -->
+      <div id="p-tournament" class="panel">
+        <div class="panel-title">🏆 کۆنترۆڵی تۆرنمێنت</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+          <button class="btn btn-ok"    onclick="openLobbyNow()">🔓 کردنەوەی ژووری یاری</button>
+          <button class="btn btn-gold"  onclick="forceStartBracket()">⚡ دەستپێکردنی یاری ئێستا</button>
+          <button class="btn btn-red"   onclick="forceEndGame()">⛔ کۆتایی پێهێنان</button>
+          <button class="btn btn-ghost" onclick="loadBracket()">🔄 نوێکردنەوە</button>
+        </div>
+        <div style="margin-bottom:8px;color:var(--muted);font-size:.82rem">
+          حاڵەت: <span id="tState" style="color:var(--gold);font-weight:800">—</span>
+          &nbsp;|&nbsp; ژووری یاری: <span id="tLobby" style="color:var(--gold)">—</span>
+        </div>
+        <div class="bracket" id="bracketWrap"></div>
+      </div>
 
-<!-- LOBBY -->
-<div id="s-lobby" class="screen">
-  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
-  <div class="logo" style="margin-bottom:6px">
-    <h1 style="font-size:1.8rem">🎮 ژووری یاری</h1>
-  </div>
-  <div class="lobby-count" id="lobbyCount">0 / ٣٢</div>
-  <div class="lobby-sub" id="lobbySub">چاوەڕوانی یاریزانانی تر... یاری لە کاتژمێر ٩ دەستپێدەکات</div>
-  <div class="lobby-grid" id="lobbyGrid"></div>
-</div>
+      <!-- ANNOUNCE -->
+      <div id="p-announce" class="panel">
+        <div class="panel-title">📢 ئاگادارکردنەوە و مەسەج</div>
+        <div class="ann-box">
+          <h4>🌐 مەسەجی گشتی (نیشاندراو بۆ هەموو کەسان لە هۆم)</h4>
+          <div class="fg"><textarea id="annText" rows="3" placeholder="مەسەجت بنووسە..."></textarea></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-gold" onclick="saveAnnouncement()">نێردن</button>
+            <button class="btn btn-ghost" onclick="clearAnnouncement()">سڕینەوە</button>
+          </div>
+        </div>
+        <div class="ann-box">
+          <h4>⏰ گۆڕینی کاتی یاری (هەینی بەخۆیەوە گرت)</h4>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">
+            یاری ئۆتۆماتیکی هەموو شەو (بەجگە لە هەینی) کاتژمێر ٩ی شەودا دەستپێدەکات.
+          </p>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="fg" style="margin:0;flex:1">
+              <label>پەیامی تایبەت بۆ ئەمشەو</label>
+              <input type="text" id="specialNote" placeholder="بۆ نموونە: یاری تایبەت بۆ جەژنی..."/>
+            </div>
+            <button class="btn btn-blue" onclick="saveSpecialNote()" style="margin-top:18px">پاراستن</button>
+          </div>
+        </div>
+      </div>
 
-<!-- BRACKET REVEAL -->
-<div id="s-reveal" class="screen">
-  <div class="logo" style="margin-bottom:6px">
-    <h1 style="font-size:1.6rem">🥊 یاریزانەکەت</h1>
-  </div>
-  <div class="bracket-vs" id="revealVs"></div>
-  <div class="lobby-sub" id="revealCountdown">یاری لە ١٠ چرکەدا دەستپێدەکات...</div>
-</div>
-
-<!-- LIVE MATCH -->
-<div id="s-match" class="screen">
-  <div class="match-hdr">
-    <div class="match-p" id="matchP1">—</div>
-    <div class="match-vs-lbl">VS</div>
-    <div class="match-p" id="matchP2">—</div>
-  </div>
-  <div class="match-timer">
-    <svg viewBox="0 0 100 100">
-      <circle class="tbg" cx="50" cy="50" r="40" style="fill:none;stroke:rgba(255,255,255,.07);stroke-width:6"/>
-      <circle id="matchTFill" cx="50" cy="50" r="40" style="fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;stroke-dasharray:251.2;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .5s"/>
-    </svg>
-    <div class="tn" id="matchTNum">--</div>
-  </div>
-  <div class="match-q" id="matchQ">چاوەڕوانی پرسیار...</div>
-  <div class="match-agrid" id="matchAGrid"></div>
-  <div class="match-status" id="matchStatus"></div>
-</div>
-
-<!-- MATCH RESULT (win/lose this match) -->
-<div id="s-match-result" class="screen">
-  <div class="card" style="text-align:center;max-width:420px">
-    <div class="result-emoji" id="mrEmoji">—</div>
-    <div class="result-title" id="mrTitle">—</div>
-    <div class="result-sub" id="mrSub">—</div>
-  </div>
-</div>
-
-<!-- WAITING FOR NEXT ROUND -->
-<div id="s-wait-round" class="screen">
-  <div class="card" style="text-align:center;max-width:420px">
-    <div class="result-emoji">⏳</div>
-    <div class="result-title" style="color:var(--gold)">چاوەڕوانی دەوری داهاتوو</div>
-    <div class="result-sub" id="waitRoundSub">یاریزانانی تر هێشتا یاری دەکەن...</div>
-  </div>
-</div>
-
-<!-- ELIMINATED -->
-<div id="s-eliminated" class="screen">
-  <div class="card" style="text-align:center;max-width:420px">
-    <div class="result-emoji">😔</div>
-    <div class="result-title" style="color:var(--ng)">دەرچوویت لە یاری</div>
-    <div class="result-sub" id="elimSub">هیوادارین جاری داهاتوو زیاتر بەختت هەبێت!</div>
-    <button class="btn btn-gold" onclick="go('s-home')" style="width:100%;margin-top:18px">🏠 گەڕانەوە بۆ ماڵەوە</button>
-  </div>
-</div>
-
-<!-- NOT QUALIFIED (lobby was full when the bracket generated) -->
-<div id="s-not-qualified" class="screen">
-  <div class="card" style="text-align:center;max-width:420px">
-    <div class="result-emoji">🙏</div>
-    <div class="result-title" style="color:var(--gold)">ژوورەکە پڕبوو</div>
-    <div class="result-sub">٣٢ یاریزانی یەکەم داخڵ بوون پێش تۆ. تکایە شەوی داهاتوو زووتر بچۆرە ژوورەوە!</div>
-    <button class="btn btn-gold" onclick="go('s-home')" style="width:100%;margin-top:18px">🏠 گەڕانەوە بۆ ماڵەوە</button>
-  </div>
-</div>
-
-<!-- FINAL SPECTATE -->
-<div id="s-spectate" class="screen">
-  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
-  <div class="logo" style="margin-bottom:6px">
-    <h1 style="font-size:1.6rem">🔴 فینال — ڕاستەوخۆ</h1>
-  </div>
-  <div class="match-hdr">
-    <div class="match-p" id="specP1">—</div>
-    <div class="match-vs-lbl">VS</div>
-    <div class="match-p" id="specP2">—</div>
-  </div>
-  <div class="match-timer">
-    <svg viewBox="0 0 100 100">
-      <circle class="tbg" cx="50" cy="50" r="40" style="fill:none;stroke:rgba(255,255,255,.07);stroke-width:6"/>
-      <circle id="specTFill" cx="50" cy="50" r="40" style="fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;stroke-dasharray:251.2;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear"/>
-    </svg>
-    <div class="tn" id="specTNum">--</div>
-  </div>
-  <div class="match-q" id="specQ">چاوەڕوانی دەستپێکردنی فینال...</div>
-  <div class="match-agrid" id="specAGrid"></div>
-</div>
-
-<!-- LOGIN -->
-<div id="s-login" class="screen">
-  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
-  <div class="card">
-    <h2>🔑 چوونەژوورەوە</h2>
-    <div class="sub">ژمارەی مۆبایل و وشەی نهێنیت بنووسە</div>
-    <div class="fg">
-      <label>ژمارەی مۆبایل</label>
-      <input type="tel" id="loPhone" placeholder="07XXXXXXXXX" inputmode="numeric"/>
-      <div class="fg-msg" id="loPhoneMsg"></div>
-    </div>
-    <div class="fg">
-      <label>وشەی نهێنی</label>
-      <input type="password" id="loPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
-      <button class="eyebtn" onclick="toggleEye('loPass')">👁</button>
-      <div class="fg-msg" id="loPassMsg"></div>
-    </div>
-    <button class="btn btn-gold" id="loBtn" onclick="doLogin()" style="width:100%;margin-top:6px">چوونەژوورەوە</button>
-    <div style="text-align:center;margin-top:14px">
-      <button class="btn-link" onclick="go('s-register')">هەژمارت نییە؟ خۆت تۆمار بکە</button>
-    </div>
-  </div>
-</div>
-
-<!-- REGISTER -->
-<div id="s-register" class="screen">
-  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
-  <div class="card">
-    <h2>✨ خۆتۆمارکردن</h2>
-    <div class="sub">ژمارە، ناو و وشەی نهێنیت دیاری بکە</div>
-    <div class="fg">
-      <label>ژمارەی مۆبایل</label>
-      <input type="tel" id="rgPhone" placeholder="07XXXXXXXXX" inputmode="numeric"/>
-      <div class="fg-msg" id="rgPhoneMsg"></div>
-    </div>
-    <div class="fg">
-      <label>ناوی یاریزان</label>
-      <input type="text" id="rgName" placeholder="ناوت لێرە بنووسە"/>
-      <div class="fg-msg" id="rgNameMsg"></div>
-    </div>
-    <div class="fg">
-      <label>وشەی نهێنی (لانیکەم ٦ پیت)</label>
-      <input type="password" id="rgPass" placeholder="••••••••"/>
-      <button class="eyebtn" onclick="toggleEye('rgPass')">👁</button>
-      <div class="fg-msg" id="rgPassMsg"></div>
-    </div>
-    <div class="fg">
-      <label>دووبارەکردنەوەی وشەی نهێنی</label>
-      <input type="password" id="rgPass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"/>
-      <div class="fg-msg" id="rgPass2Msg"></div>
-    </div>
-    <button class="btn btn-gold" id="rgBtn" onclick="doRegister()" style="width:100%;margin-top:6px">خۆتۆمارکردن</button>
-    <div style="text-align:center;margin-top:14px">
-      <button class="btn-link" onclick="go('s-login')">هەژمارت هەیە؟ چوونەژوورەوە</button>
-    </div>
-  </div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="s-dashboard" class="screen top">
-  <button class="bk" onclick="doLogout()">🚪 دەرچوون</button>
-  <div class="dash-head">
-    <div class="avatar" id="dashAvatar">🎮</div>
-    <div class="dash-name" id="dashName">—</div>
-    <div class="dash-phone" id="dashPhone">—</div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="sv" id="dashTrophies">0</div><div class="sl">🏆 مۆدال</div></div>
-    <div class="stat-card"><div class="sv" id="dashGames">0</div><div class="sl">🎮 یاری</div></div>
-    <div class="stat-card"><div class="sv" id="dashWins">0</div><div class="sl">✅ بردنەوە</div></div>
-  </div>
-  <div class="hist-wrap">
-    <div class="hist-title">مێژووی یاریەکان</div>
-    <div id="histList"><div class="hist-empty">هێشتا هیچ یارییەک نەکراوە — کاتژمێر ٩ی شەو بگە!</div></div>
-  </div>
-</div>
+    </div><!-- /main-area -->
+  </div><!-- /admin-wrap -->
+</div><!-- /s-admin -->
 
 <div class="notif" id="notif"></div>
 
+<script src="firebase.js"></script>
 <script>
-// FB / fbGet / fbPut / fbDelete / sha256 / normPhone / safeKey / rtdb /
-// SRV_TS / serverNow all come from firebase-config.js (loaded in <head>).
+// ═══════════════════════════════════════════════
+//  ADMIN AUTH
+// ═══════════════════════════════════════════════
+const ADMIN_PW = "112233";
 
-// ═══════════════════════════════════════════════════════
-//  NAV
-// ═══════════════════════════════════════════════════════
-function go(id) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+function adminLogin(){
+  const pw=document.getElementById("aPw").value;
+  if(pw===ADMIN_PW){
+    sessionStorage.setItem("adminAuth","1");
+    document.getElementById("s-login").classList.remove("active");
+    document.getElementById("s-admin").classList.add("active");
+    loadOverview(); loadUsers(); loadQuestions(); loadBracket();
+    listenState();
+    notif("بەخێربێیتەوە ئەدمین ✓","suc");
+  } else notif("وشەی نهێنی هەڵەیە","err");
+}
+function adminLogout(){
+  sessionStorage.removeItem("adminAuth");
+  location.reload();
+}
+
+// ═══════════════════════════════════════════════
+//  PANELS
+// ═══════════════════════════════════════════════
+function showPanel(id){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById(id).classList.add("active");
-  if (id === "s-dashboard") renderDashboard();
+  event.target.classList.add("active");
+}
+function notif(msg,type){
+  const el=document.getElementById("notif");
+  el.textContent=msg;el.className="notif "+(type||"inf")+" show";
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("show"),3200);
 }
 
-function toggleEye(id) {
-  const el = document.getElementById(id);
-  el.type = el.type === "password" ? "text" : "password";
+// ═══════════════════════════════════════════════
+//  OVERVIEW
+// ═══════════════════════════════════════════════
+async function loadOverview(){
+  try{
+    const [users,qs,state,online]=await Promise.all([
+      fbGet("/users"),fbGet("/tournament_questions"),
+      fbGet("/tournament/state"),
+      new Promise(r=>rtdb.ref("presence").once("value",s=>r(Object.keys(s.val()||{}).length)))
+    ]);
+    document.getElementById("ovUsers").textContent=Object.keys(users||{}).length;
+    document.getElementById("ovOnline").textContent=online;
+    let qcount=0;
+    if(qs)Object.values(qs).forEach(r=>Object.values(r).forEach(a=>{qcount+=(Array.isArray(a)?a:Object.values(a||{})).length;}));
+    document.getElementById("ovQuestions").textContent=qcount;
+    document.getElementById("ovState").textContent=state||"idle";
+    // Live log
+    const lobby=await fbGet("/tournament/lobby");
+    const log=[];
+    log.push("حاڵەتی تۆرنمێنت: "+(state||"idle"));
+    log.push("ژووری یاری: "+(Object.keys(lobby||{}).length)+" یاریزان");
+    log.push("ئۆنلاین: "+online);
+    document.getElementById("ovLog").innerHTML=log.map(l=>"• "+l).join("<br>");
+  }catch(e){notif("هەڵە: "+e.message,"err");}
 }
 
-function otpMove(i, e) {
-  const val = e.target.value.replace(/[^0-9]/g, "");
-  e.target.value = val;
-  if (val && i < 3) document.getElementById("otp" + (i + 1)).focus();
-  if (e.key === "Backspace" && !val && i > 0) document.getElementById("otp" + (i - 1)).focus();
-}
-
-// ═══════════════════════════════════════════════════════
-//  SESSION — the actual session record lives in Firebase at
-//  /sessions/{token}. Only the random opaque token itself sits in
-//  localStorage (a phone/browser can't avoid storing *something*
-//  locally to know "which session am I" — but no user data, no
-//  phone number, no name is kept on the device anymore).
-// ═══════════════════════════════════════════════════════
-const TOKEN_KEY = "quiz_session_token";
-let currentSession = null; // {phone, username, token} — cached in memory after boot
-
-function genToken() {
-  return "s_" + Date.now() + "_" + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
-}
-
-async function saveSession(user) {
-  const token = genToken();
-  await fbPut("/sessions/" + token, { phone: user.phone, username: user.username, createdAt: Date.now() });
-  localStorage.setItem(TOKEN_KEY, token);
-  currentSession = { phone: user.phone, username: user.username, token };
-}
-
-async function clearSession() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  localStorage.removeItem(TOKEN_KEY);
-  currentSession = null;
-  if (token) { try { await fbDelete("/sessions/" + token); } catch (e) {} }
-}
-
-// Runs once on page load: resolves the local token against Firebase
-// to rebuild the session, then paints the UI. Everything else in the
-// app reads the already-resolved `currentSession` synchronously.
-async function bootSession() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) { currentSession = null; applySessionUI(); return; }
-  try {
-    const rec = await fbGet("/sessions/" + token);
-    if (rec) currentSession = { phone: rec.phone, username: rec.username, token };
-    else { localStorage.removeItem(TOKEN_KEY); currentSession = null; }
-  } catch (e) {
-    currentSession = null; // network hiccup — user just sees the login screen this once
-  }
-  applySessionUI();
-}
-
-function applySessionUI() {
-  const s = currentSession;
-  document.getElementById("homeAuthBtns").style.display = s ? "none" : "flex";
-  document.getElementById("homeUserBtns").style.display = s ? "block" : "none";
-  document.getElementById("homeNote").textContent = s
-    ? "چاوەڕێی کاتژمێر ٩ی شەو بکە — دەروازەی یاری بۆت دەکرێتەوە"
-    : "یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.";
-  if (s) {
-    document.getElementById("miniName").textContent = s.username;
-    loadHomeMiniStats(s.phone);
-    initUserPresence(s.phone);
-  }
-  refreshHomeTourneyUI();
-  watchForMyMatch(); // resumes an in-progress match automatically after a page refresh
-  return s;
-}
-
-// Live-ish refresh of the logged-in user's own stats shown right on the
-// home page (not just inside the dashboard screen), so trophies/history
-// counts update without the user having to click into the dashboard.
-async function loadHomeMiniStats(phone) {
-  try {
-    const user = await fbGet("/users/" + phone);
-    if (!user) { doLogout(); return; }
-    document.getElementById("miniTrophies").textContent = user.trophies || 0;
-    document.getElementById("miniGames").textContent    = user.gamesPlayed || 0;
-    document.getElementById("miniWins").textContent     = user.wins || 0;
-  } catch (e) { /* keep last known values on a network hiccup */ }
-}
-
-// ═══════════════════════════════════════════════════════
-//  REGISTER FLOW
-// ═══════════════════════════════════════════════════════
-function clearErr(ids) { ids.forEach(id => { document.getElementById(id).textContent = ""; }); }
-
-async function doRegister() {
-  clearErr(["rgPhoneMsg","rgNameMsg","rgPassMsg","rgPass2Msg"]);
-  const phone = normPhone(document.getElementById("rgPhone").value);
-  const name  = document.getElementById("rgName").value.trim();
-  const pass  = document.getElementById("rgPass").value;
-  const pass2 = document.getElementById("rgPass2").value;
-
-  let ok = true;
-  if (phone.length < 8) { document.getElementById("rgPhoneMsg").textContent = "ژمارەی مۆبایل ڕاست نییە"; ok = false; }
-  if (!name)             { document.getElementById("rgNameMsg").textContent = "ناوت بنووسە"; ok = false; }
-  if (pass.length < 6)   { document.getElementById("rgPassMsg").textContent = "لانیکەم ٦ پیت"; ok = false; }
-  if (pass !== pass2)    { document.getElementById("rgPass2Msg").textContent = "وشەی نهێنی وەک یەک نییە"; ok = false; }
-  if (!ok) return;
-
-  const btn = document.getElementById("rgBtn");
-  btn.disabled = true; btn.textContent = "⏳ چاوەڕوان بە...";
-  try {
-    const existing = await fbGet("/users/" + phone);
-    if (existing) {
-      document.getElementById("rgPhoneMsg").textContent = "ئەم ژمارەیە پێشتر تۆمارکراوە";
-      btn.disabled = false; btn.textContent = "خۆتۆمارکردن"; return;
-    }
-    const passHash = await sha256(pass);
-    const userObj = {
-      username: name, passHash,
-      trophies: 0, gamesPlayed: 0, wins: 0, history: [], createdAt: Date.now()
-    };
-    await fbPut("/users/" + phone, userObj);
-    await saveSession({ phone, username: name });
-    notif("هەژمار دروستکرا — بەخێربێیت " + name + "! 🎉", "suc");
-    applySessionUI();
-    go("s-home");
-  } catch (e) {
-    notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
-  }
-  btn.disabled = false; btn.textContent = "خۆتۆمارکردن";
-}
-
-// ═══════════════════════════════════════════════════════
-//  LOGIN FLOW
-// ═══════════════════════════════════════════════════════
-async function doLogin() {
-  clearErr(["loPhoneMsg","loPassMsg"]);
-  const phone = normPhone(document.getElementById("loPhone").value);
-  const pass  = document.getElementById("loPass").value;
-  if (phone.length < 8) { document.getElementById("loPhoneMsg").textContent = "ژمارەی مۆبایل ڕاست نییە"; return; }
-  if (!pass)             { document.getElementById("loPassMsg").textContent = "وشەی نهێنی بنووسە"; return; }
-
-  const btn = document.getElementById("loBtn");
-  btn.disabled = true; btn.textContent = "⏳ چاوەڕوان بە...";
-  try {
-    const user = await fbGet("/users/" + phone);
-    if (!user) {
-      document.getElementById("loPhoneMsg").textContent = "هەژمار بوونی نییە";
-      btn.disabled = false; btn.textContent = "چوونەژوورەوە"; return;
-    }
-    const passHash = await sha256(pass);
-    if (passHash !== user.passHash) {
-      document.getElementById("loPassMsg").textContent = "وشەی نهێنی هەڵەیە";
-      btn.disabled = false; btn.textContent = "چوونەژوورەوە"; return;
-    }
-    await saveSession({ phone, username: user.username });
-    notif("بەخێربێیتەوە " + user.username + " ✓", "suc");
-    applySessionUI();
-    go("s-dashboard");
-  } catch (e) {
-    notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
-  }
-  btn.disabled = false; btn.textContent = "چوونەژوورەوە";
-}
-
-async function doLogout() {
-  await clearSession();
-  applySessionUI();
-  notif("چوویتە دەرەوە", "inf");
-  go("s-home");
-}
-
-// ═══════════════════════════════════════════════════════
-//  DASHBOARD
-// ═══════════════════════════════════════════════════════
-async function renderDashboard() {
-  const s = currentSession;
-  if (!s) { go("s-home"); return; }
-  document.getElementById("dashName").textContent  = s.username;
-  document.getElementById("dashPhone").textContent = "+" + s.phone;
-  try {
-    const user = await fbGet("/users/" + s.phone);
-    if (!user) { doLogout(); return; }
-    document.getElementById("dashTrophies").textContent = user.trophies || 0;
-    document.getElementById("dashGames").textContent    = user.gamesPlayed || 0;
-    document.getElementById("dashWins").textContent     = user.wins || 0;
-    const list = document.getElementById("histList");
-    const hist = user.history || [];
-    if (!hist.length) {
-      list.innerHTML = '<div class="hist-empty">هێشتا هیچ یارییەک نەکراوە — کاتژمێر ٩ی شەو بگە!</div>';
-    } else {
-      list.innerHTML = hist.slice().reverse().map(h =>
-        `<div class="hist-item"><span>${h.date || ""}</span><span>${h.result || ""}</span></div>`
-      ).join("");
-    }
-  } catch (e) { /* keep cached UI on network hiccup */ }
-}
-
-// ═══════════════════════════════════════════════════════
-//  PRESENCE — two separate presence trees:
-//
-//  1) /presence/{tabId}  — anonymous, one entry per open BROWSER TAB.
-//     Powers the "N online now" pill. Uses sessionStorage (not
-//     localStorage) for the id specifically so that opening two tabs
-//     on the same device/browser correctly counts as 2 — this was the
-//     bug where testing with two tabs on one machine still showed "1"
-//     (localStorage is shared across tabs of the same browser+site,
-//     sessionStorage is not).
-//
-//  2) /user_presence/{phone} — one entry per LOGGED-IN user (only
-//     written once you're signed in). This is what lets us detect an
-//     opponent disappearing mid-match (closed tab, lost internet, app
-//     killed) so the other player can be auto-advanced instead of
-//     waiting forever — see watchOpponentPresence() further down.
-// ═══════════════════════════════════════════════════════
-function myTabId() {
-  let id = sessionStorage.getItem("quiz_tab_id");
-  if (!id) { id = "t_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9); sessionStorage.setItem("quiz_tab_id", id); }
-  return id;
-}
-
-function setOnlineCount(n) { document.getElementById("onlineCount").innerHTML = "<strong>" + n + "</strong> ئۆنلاین ئێستا"; }
-
-function initPresence() {
-  const myRef = rtdb.ref("presence/" + myTabId());
-  rtdb.ref(".info/connected").on("value", snap => {
-    if (snap.val() === true) {
-      myRef.onDisconnect().remove();
-      myRef.set({ t: SRV_TS });
-    }
+function listenState(){
+  rtdb.ref("tournament/state").on("value",s=>{
+    document.getElementById("ovState").textContent=s.val()||"idle";
+    document.getElementById("tState").textContent=s.val()||"idle";
   });
-  rtdb.ref("presence").on("value", snap => {
-    const val = snap.val() || {};
-    setOnlineCount(Object.keys(val).length);
+  rtdb.ref("tournament/lobby").on("value",s=>{
+    const n=Object.keys(s.val()||{}).length;
+    document.getElementById("tLobby").textContent=n+" / ٣٢ یاریزان";
   });
-}
-initPresence();
-
-function initUserPresence(phone) {
-  const myRef = rtdb.ref("user_presence/" + safeKey(phone));
-  rtdb.ref(".info/connected").on("value", snap => {
-    if (snap.val() === true) {
-      myRef.onDisconnect().remove();
-      myRef.set({ t: SRV_TS });
-    }
+  rtdb.ref("presence").on("value",s=>{
+    document.getElementById("ovOnline").textContent=Object.keys(s.val()||{}).length;
   });
 }
 
-setInterval(() => {
-  const s = currentSession;
-  if (s && document.getElementById("s-home").classList.contains("active")) loadHomeMiniStats(s.phone);
-}, 10000);
-
-// ═══════════════════════════════════════════════════════
-//  COUNTDOWN — every night 9 PM, except Friday
-// ═══════════════════════════════════════════════════════
-const GAME_HOUR = 21;
-const OFF_DAY   = 5;
-const DAY_NAMES = ["یەکشەممە","دووشەممە","سێشەممە","چوارشەممە","پێنجشەممە","هەینی","شەممە"];
-
-function nextGameStart(from) {
-  for (let add = 0; add <= 8; add++) {
-    const cand = new Date(from);
-    cand.setDate(cand.getDate() + add);
-    cand.setHours(GAME_HOUR, 0, 0, 0);
-    if (cand.getDay() === OFF_DAY) continue;
-    if (add === 0 && cand.getTime() <= from.getTime()) continue;
-    return cand;
-  }
-  return null;
+// ═══════════════════════════════════════════════
+//  USERS
+// ═══════════════════════════════════════════════
+let _allUsers=[];
+async function loadUsers(){
+  try{
+    const u=await fbGet("/users");
+    _allUsers=Object.entries(u||{}).map(([phone,d])=>({phone,...d}));
+    renderUsers(_allUsers);
+  }catch(e){notif("هەڵە","err");}
 }
-function pad(n) { return String(n).padStart(2, "0"); }
-
-function renderWeekStrip(now) {
-  const strip = document.getElementById("weekStrip"); strip.innerHTML = "";
-  const todayIdx = now.getDay();
-  for (let i = 0; i < 7; i++) {
-    const chip = document.createElement("div");
-    const isOff = i === OFF_DAY;
-    chip.className = "wchip " + (isOff ? "off" : "play") + (i === todayIdx ? " today" : "");
-    chip.textContent = DAY_NAMES[i].slice(0, 2);
-    chip.title = DAY_NAMES[i];
-    strip.appendChild(chip);
-  }
+function renderUsers(list){
+  const tb=document.getElementById("userTbody");
+  if(!list.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">کەسی نییە</td></tr>';return;}
+  tb.innerHTML=list.map(u=>`<tr>
+    <td><strong>${u.username||"—"}</strong></td>
+    <td style="direction:ltr;text-align:right">${u.phone||"—"}</td>
+    <td>🏆 ${u.trophies||0}</td>
+    <td>${u.gamesPlayed||0}</td>
+    <td>${u.wins||0}</td>
+    <td><button class="btn btn-red btn-sm" onclick="banUser('${u.phone}')">بان</button></td>
+  </tr>`).join("");
 }
-let weekStripDay = null;
-function tickCountdown() {
-  const now = new Date();
-  if (weekStripDay !== now.getDate()) { renderWeekStrip(now); weekStripDay = now.getDate(); }
-  const card = document.getElementById("cdCard"), grid = document.getElementById("cdGrid");
-  const liveBadge = document.getElementById("cdLiveBadge"), offBadge = document.getElementById("cdOffBadge");
-  const nextDayEl = document.getElementById("cdNextDay");
-  const isFridayToday = now.getDay() === OFF_DAY;
-  // "Live" now follows the ACTUAL tournament state from Firebase, not a
-  // guessed clock window — so the badge stays accurate whether tonight's
-  // rounds finish in 5 minutes or drag on for an hour, and correctly
-  // resets to a fresh countdown the moment the tournament actually ends.
-  const liveNow = !["idle", "lobby_open", "finished"].includes(liveTournamentState);
-
-  if (liveNow) {
-    card.className = "cd-card live"; grid.style.display = "none";
-    offBadge.style.display = "none"; liveBadge.style.display = "inline-block";
-    nextDayEl.textContent = "ئەمشەو — " + DAY_NAMES[now.getDay()];
-    return;
-  }
-  if (isFridayToday) {
-    card.className = "cd-card off"; grid.style.display = "none";
-    liveBadge.style.display = "none"; offBadge.style.display = "inline-block";
-  } else {
-    card.className = "cd-card"; grid.style.display = "flex";
-    liveBadge.style.display = "none"; offBadge.style.display = "none";
-  }
-  const target = nextGameStart(now);
-  if (!target) { nextDayEl.textContent = "—"; return; }
-  const sameDay = target.toDateString() === now.toDateString();
-  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
-  const isTomorrow = target.toDateString() === tomorrow.toDateString();
-  nextDayEl.textContent = (sameDay ? "ئەمشەو" : isTomorrow ? "بەیانی شەو" : DAY_NAMES[target.getDay()]) + " — کاتژمێر ٩ی شەو";
-  let diff = Math.max(0, target.getTime() - now.getTime());
-  const days = Math.floor(diff / 86400000); diff -= days * 86400000;
-  const hrs  = Math.floor(diff / 3600000);  diff -= hrs * 3600000;
-  const mins = Math.floor(diff / 60000);    diff -= mins * 60000;
-  const secs = Math.floor(diff / 1000);
-  document.getElementById("cdD").textContent = pad(days);
-  document.getElementById("cdH").textContent = pad(hrs);
-  document.getElementById("cdM").textContent = pad(mins);
-  document.getElementById("cdS").textContent = pad(secs);
+function filterUsers(){
+  const q=document.getElementById("userSearch").value.toLowerCase();
+  renderUsers(_allUsers.filter(u=>(u.username||"").toLowerCase().includes(q)||(u.phone||"").includes(q)));
 }
-tickCountdown(); setInterval(tickCountdown, 1000);
-
-// ═══════════════════════════════════════════════════════
-//  TOURNAMENT ENGINE — 32-player single elimination, 1v1
-//
-//  Firebase layout:
-//  /tournament/state       "idle" | "lobby_open" | "round_32" | "round_16"
-//                           | "round_8" | "round_4" | "round_2" | "finished"
-//  /tournament/gameDate     "YYYY-MM-DD" — which day this bracket belongs to
-//                           (a transaction on this key is how one browser
-//                           tab "wins the race" to generate the bracket —
-//                           see honest note below)
-//  /tournament/currentRound "32"|"16"|"8"|"4"|"2"
-//  /tournament/champion     {phone, username} | null
-//  /tournament/lobby/{phone} = {phone, username, joinedAt}
-//  /tournament/matches/round_{N}/{matchId} = {
-//      players:[{phone,username,isBot}, {phone,username,isBot}],
-//      status: "waiting"|"live"|"resolving"|"done",
-//      question: {qId, question, answers, timeSeconds} (NO "correct" field —
-//                 see anti-cheat note below),
-//      qStartAt, answers:{ [phoneKey]: {choice, at} },
-//      winnerPhone, correct, resolvedAt
-//  }
-//
-//  ── HONEST LIMITATIONS (client-only, no backend server) ──
-//  1) Bracket generation at 9PM needs *some* browser tab to run the
-//     code. I use a Firebase transaction on /tournament/gameDate so
-//     whichever tab is open first "claims" the job for the day — this
-//     works well in practice since many players have the home page
-//     open waiting for the countdown, but it is not as bulletproof as
-//     a real scheduled server job (Cloud Functions). If literally zero
-//     tabs are open at 9:00, nothing generates until one opens.
-//  2) Anti-cheat: I deliberately do NOT send the correct-answer index
-//     to clients while a question is live — only after it resolves.
-//     But because there's no backend to validate answers, a technically
-//     determined player could still read /tournament_questions directly
-//     from the browser's network tools during a live match. For a real
-//     business tournament (especially with prizes), the fix is a small
-//     Firebase Cloud Function that judges answers server-side — I can
-//     build that with you separately if/when you're ready to add a
-//     backend; it's outside what a pure client-side file can guarantee.
-// ═══════════════════════════════════════════════════════
-const ROUND_SEQUENCE = ["32","16","8","4","2"];
-const ROUND_SIZE = { "32":32, "16":16, "8":8, "4":4, "2":2 };
-let myMatchUnsub = null, myMatchPath = null, myMatchTimerI = null;
-let oppPresenceUnsub = null;
-let lobbyUnsub = null;
-let tourneyStateUnsub = null;
-
-function todayStr() {
-  const d = new Date();
-  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+async function banUser(phone){
+  if(!confirm("دڵنیایت لە بانکردنی ئەم بەکارهێنەرە؟"))return;
+  try{
+    await fbDelete("/users/"+phone);
+    notif("بەکارهێنەر بانکرا ✓","suc");loadUsers();
+  }catch(e){notif("هەڵە","err");}
 }
-function safeKey(phone) { return String(phone).replace(/[^0-9a-zA-Z]/g, ""); }
 
-// ── Home-screen wiring: join button + champion banner + spectate link ──
-let homeTourneyListenerAttached = false;
-let liveTournamentState = "idle"; // updated by the listener below, read by tickCountdown()
-function refreshHomeTourneyUI() {
-  const s = currentSession;
-  document.getElementById("joinRoomWrap").style.display = s ? "flex" : "none";
-  if (homeTourneyListenerAttached) return;
-  homeTourneyListenerAttached = true;
-  rtdb.ref("tournament/state").on("value", snap => {
-    const state = snap.val() || "idle";
-    liveTournamentState = state;
-    const champBanner = document.getElementById("champBanner");
-    if (state === "finished") {
-      rtdb.ref("tournament/champion").once("value").then(cs => {
-        const c = cs.val();
-        if (c) { document.getElementById("champName").textContent = c.username; champBanner.style.display = "block"; }
+// ═══════════════════════════════════════════════
+//  QUESTIONS
+// ═══════════════════════════════════════════════
+let _qCr=-1;
+function pickQCr(idx){
+  _qCr=idx;
+  for(let i=0;i<4;i++) document.getElementById("qcr"+i).classList.toggle("on",i===idx);
+}
+async function addQuestion(){
+  const round=document.getElementById("qRound").value;
+  const question=document.getElementById("qText").value.trim();
+  const answers=["qa0","qa1","qa2","qa3"].map(id=>document.getElementById(id).value.trim());
+  const timeSeconds=parseInt(document.getElementById("qTime").value)||19;
+  if(!question){notif("پرسیار بنووسە","err");return;}
+  if(!answers[0]||!answers[1]){notif("لانیکەم A و B پێویستن","err");return;}
+  if(_qCr<0){notif("وەڵامی ڕاست دیاری بکە","err");return;}
+  if(!answers[_qCr]){notif("وەڵامی ڕاستەکەت بەتاڵە","err");return;}
+  try{
+    const existing=await fbGet("/tournament_questions/"+round)||{};
+    const arr=Array.isArray(existing)?existing:Object.values(existing).filter(Boolean);
+    const id="q_"+Date.now();
+    arr.push({id,question,answers,correct:_qCr,timeSeconds});
+    await fbPut("/tournament_questions/"+round,arr);
+    // Clear form
+    document.getElementById("qText").value="";
+    ["qa0","qa1","qa2","qa3"].forEach(id=>document.getElementById(id).value="");
+    for(let i=0;i<4;i++) document.getElementById("qcr"+i).classList.remove("on");
+    _qCr=-1;
+    notif("✅ پرسیار پارازرا","suc");
+    loadQuestions();
+  }catch(e){notif("هەڵە: "+e.message,"err");}
+}
+async function loadQuestions(){
+  const round=document.getElementById("qRoundFilter").value;
+  try{
+    const data=await fbGet("/tournament_questions/"+round);
+    const qs=data?Array.isArray(data)?data:Object.values(data).filter(Boolean):[];
+    const list=document.getElementById("qList");
+    if(!qs.length){list.innerHTML='<div style="color:var(--muted);font-size:.84rem;padding:12px 0">هێچ پرسیارێک نەپارازراوە بۆ ئەم دەوری</div>';return;}
+    list.innerHTML=qs.map((q,i)=>`
+      <div class="qrow">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;margin-bottom:3px">${q.question}</div>
+          <div style="font-size:.72rem;color:var(--muted)">
+            وەڵامی ڕاست: ${["A","B","C","D"][q.correct]} — ${q.answers[q.correct]||""}
+            &nbsp;|&nbsp; ${q.timeSeconds||19} چرکە
+          </div>
+        </div>
+        <button class="qdel" onclick="deleteQuestion('${round}',${i})">🗑</button>
+      </div>`).join("");
+  }catch(e){}
+}
+async function deleteQuestion(round,idx){
+  if(!confirm("دڵنیایت؟"))return;
+  try{
+    const data=await fbGet("/tournament_questions/"+round);
+    const qs=Array.isArray(data)?[...data]:Object.values(data||{}).filter(Boolean);
+    qs.splice(idx,1);
+    await fbPut("/tournament_questions/"+round,qs.length?qs:null);
+    notif("سڕایەوە ✓","suc");loadQuestions();
+  }catch(e){notif("هەڵە","err");}
+}
+
+// ═══════════════════════════════════════════════
+//  TOURNAMENT CONTROLS
+// ═══════════════════════════════════════════════
+async function openLobbyNow(){
+  await fbPut("/tournament/state","lobby_open");
+  await fbPut("/tournament/lobby",null);
+  await fbPut("/tournament/champion",null);
+  await fbPut("/tournament/gameDate",null);
+  notif("✅ ژووری یاری کراوەیە — یاریزانان دەتوانن بچنە ناو","suc");
+  loadOverview();
+}
+
+async function forceStartBracket(){
+  if(!confirm("یاری ئێستا دەستپێدەکات — دڵنیایت؟"))return;
+  notif("⏳ بڕاکەتی یاری دروست دەکرێت...","inf");
+  try{
+    // Import generateBracket logic inline
+    const lobSnap=await fbGet("/tournament/lobby");
+    let players=Object.values(lobSnap||{}).map(p=>({phone:p.phone,username:p.username,isBot:false}));
+    for(let i=players.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[players[i],players[j]]=[players[j],players[i]];}
+    players=players.slice(0,32);
+    let bn=0;
+    while(players.length<32){bn++;players.push({phone:"bot_"+Date.now()+"_"+bn,username:"🤖 بۆت "+bn,isBot:true});}
+    const matches={};
+    for(let i=0;i<16;i++){
+      matches["m"+i]={
+        players:[players[i*2],players[i*2+1]],
+        status:"waiting",question:null,qStartAt:null,
+        answers:{},winnerPhone:null,resolvedAt:null
+      };
+    }
+    await fbPut("/tournament/state","round_32");
+    await fbPut("/tournament/currentRound","32");
+    await fbPut("/tournament/champion",null);
+    await fbPut("/tournament/matches/round_32",matches);
+    await fbPut("/tournament/lobby",null);
+    notif("✅ یاری دەستیپێکرد — دەوری ٣٢","suc");
+    loadBracket();
+  }catch(e){notif("هەڵە: "+e.message,"err");}
+}
+
+async function forceEndGame(){
+  if(!confirm("دڵنیایت لە کۆتایی پێهێنانی یاری?"))return;
+  await fbPut("/tournament/state","idle");
+  await fbPut("/tournament/lobby",null);
+  await fbPut("/tournament/matches",null);
+  await fbPut("/tournament/currentRound",null);
+  await fbPut("/tournament/gameDate",null);
+  notif("یاری کۆتایی پێهات","suc");loadOverview();
+}
+
+// ═══════════════════════════════════════════════
+//  BRACKET VIEWER
+// ═══════════════════════════════════════════════
+async function loadBracket(){
+  const wrap=document.getElementById("bracketWrap");wrap.innerHTML="";
+  try{
+    const [state,matches]=await Promise.all([
+      fbGet("/tournament/state"),fbGet("/tournament/matches")
+    ]);
+    document.getElementById("tState").textContent=state||"idle";
+    if(!matches){wrap.innerHTML='<div style="color:var(--muted);font-size:.84rem">تۆرنمێنت هێشتا دەستپێنەکردووە</div>';return;}
+    const rounds=["round_32","round_16","round_8","round_4","round_2"];
+    rounds.forEach(rk=>{
+      const rMatches=matches[rk];if(!rMatches)return;
+      const col=document.createElement("div");col.className="bround";
+      col.innerHTML=`<div class="bround-title">${rk.replace("round_","دەوری ")}</div>`;
+      Object.entries(rMatches).forEach(([mid,m])=>{
+        const div=document.createElement("div");
+        div.className="bmatch"+(m.status==="live"?" live":m.status==="done"?" done":"");
+        const p=m.players||[];
+        const w=m.winnerPhone;
+        div.innerHTML=p.map(pl=>`
+          <div class="bplayer ${w?pl.phone===w?"winner":"loser":""}">
+            <span>${pl.username}</span>
+            ${w&&pl.phone===w?'<span>✅</span>':''}
+          </div>`).join("")+
+          `<div style="font-size:.65rem;color:var(--muted);margin-top:4px">${m.status}</div>`;
+        col.appendChild(div);
       });
-    } else {
-      champBanner.style.display = "none";
-    }
-    const btn = document.getElementById("joinRoomBtn");
-    if (!btn) return;
-    if (state === "idle" || state === "lobby_open") {
-      btn.disabled = false; btn.textContent = "🎮  چوونە ژووری یاری ئەمشەو";
-    } else if (state === "finished") {
-      btn.disabled = false; btn.textContent = "🔴  سەیری ئەنجامی فینالی ئەمشەو بکە";
-      btn.onclick = startSpectate;
-    } else {
-      btn.disabled = false; btn.textContent = "🔴  یاری ئێستا دەستیپێکردووە — سەیری فینال بکە";
-      btn.onclick = watchFinalIfLive;
-    }
-  });
-}
-
-async function watchFinalIfLive() {
-  const snap = await rtdb.ref("tournament/currentRound").once("value");
-  if (snap.val() === "2") { startSpectate(); return; }
-  notif("فینال هێشتا نەگەیشتووە — یاریزانەکان لە دەورە پێشووەکاندان", "inf");
-}
-
-// ── JOIN LOBBY (capped at 32, first-come-first-served) ──
-async function joinLobby() {
-  const s = currentSession;
-  if (!s) { go("s-login"); return; }
-  const stateSnap = await rtdb.ref("tournament/state").once("value");
-  const state = stateSnap.val() || "idle";
-  if (state !== "idle" && state !== "lobby_open") {
-    notif("یاری ئەمشەو ئێستا دەستیپێکردووە یان تەواوبووە", "inf");
-    return;
-  }
-  const lobbySnap = await rtdb.ref("tournament/lobby").once("value");
-  const lobbyVal = lobbySnap.val() || {};
-  const alreadyIn = !!lobbyVal[safeKey(s.phone)];
-  if (!alreadyIn && Object.keys(lobbyVal).length >= 32) {
-    notif("ژووری ئەمشەو پڕە (٣٢ یاریزان) — تکایە شەوی داهاتوو هەوڵبدەرەوە 🙏", "err");
-    return;
-  }
-  await rtdb.ref("tournament/lobby/" + safeKey(s.phone)).set({ phone: s.phone, username: s.username, joinedAt: SRV_TS });
-  await rtdb.ref("tournament/state").transaction(cur => (!cur || cur === "idle") ? "lobby_open" : undefined);
-  go("s-lobby");
-  watchLobby();
-  watchForMyMatch();
-}
-
-function watchLobby() {
-  if (lobbyUnsub) lobbyUnsub();
-  const ref = rtdb.ref("tournament/lobby");
-  const handler = snap => {
-    const val = snap.val() || {};
-    const players = Object.values(val);
-    document.getElementById("lobbyCount").textContent = Math.min(players.length, 32) + " / ٣٢";
-    const s = currentSession;
-    const grid = document.getElementById("lobbyGrid"); grid.innerHTML = "";
-    players.forEach(p => {
-      const chip = document.createElement("div");
-      chip.className = "lobby-chip" + (s && p.phone === s.phone ? " me" : "");
-      chip.textContent = p.username;
-      grid.appendChild(chip);
+      wrap.appendChild(col);
     });
-    document.getElementById("lobbySub").textContent = players.length >= 32
-      ? "ژوورەکە پڕە! چاوەڕوانی کاتژمێر ٩ بکە..."
-      : "چاوەڕوانی یاریزانانی تر... یاری لە کاتژمێر ٩ دەستپێدەکات (شوێنە بەتاڵەکان پڕ دەبنەوە بە بۆت)";
-  };
-  ref.on("value", handler);
-  lobbyUnsub = () => ref.off("value", handler);
+  }catch(e){notif("هەڵە: "+e.message,"err");}
 }
 
-// ── AUTO-TRIGGER AT 9PM (best-effort client-elected — see note above) ──
-async function tryTriggerTournamentStart() {
-  const now = new Date();
-  if (now.getDay() === OFF_DAY) return;
-  if (now.getHours() < GAME_HOUR) return;
-  const dateRef = rtdb.ref("tournament/gameDate");
-  const today = todayStr();
-  const res = await dateRef.transaction(cur => (cur === today) ? undefined : today);
-  if (!res.committed) return; // another tab already claimed today's bracket generation
-  await generateBracketFromLobby();
+// ═══════════════════════════════════════════════
+//  ANNOUNCEMENTS
+// ═══════════════════════════════════════════════
+async function saveAnnouncement(){
+  const txt=document.getElementById("annText").value.trim();
+  if(!txt){notif("مەسەج بنووسە","err");return;}
+  await fbPut("/announcement",{text:txt,createdAt:Date.now()});
+  notif("مەسەج نێردرا ✓","suc");
 }
-setInterval(tryTriggerTournamentStart, 15000);
+async function clearAnnouncement(){
+  await fbPut("/announcement",null);
+  document.getElementById("annText").value="";
+  notif("مەسەج سڕایەوە ✓","suc");
+}
+async function saveSpecialNote(){
+  const txt=document.getElementById("specialNote").value.trim();
+  await fbPut("/specialNote",txt||null);
+  notif("تۆمارکرا ✓","suc");
+}
 
-// Builds the round-of-32 bracket from whoever is in the lobby.
-// Qualification is strictly FIRST-COME by joinedAt (server timestamp),
-// not random — if more than 32 joined, only the first 32 play tonight
-// and the rest are told to come back next time.
-async function generateBracketFromLobby() {
-  const lobbySnap = await rtdb.ref("tournament/lobby").once("value");
-  const lobbyVal = lobbySnap.val() || {};
-  const allJoined = Object.values(lobbyVal).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
-  const qualifiedRaw = allJoined.slice(0, 32);
-  const overflow = allJoined.slice(32);
-
-  let players = qualifiedRaw.map(p => ({ phone: p.phone, username: p.username, isBot: false }));
-  // Random pairing order (fair matchups) — selection above was first-come, pairing here is shuffled.
-  players = players.sort(() => Math.random() - 0.5);
-  let botN = 0;
-  while (players.length < 32) {
-    botN++;
-    players.push({ phone: "bot_" + Date.now() + "_" + botN, username: "🤖 یاریزانی مەکینە " + botN, isBot: true });
+// ═══════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════
+window.addEventListener("load",()=>{
+  if(sessionStorage.getItem("adminAuth")==="1"){
+    document.getElementById("s-login").classList.remove("active");
+    document.getElementById("s-admin").classList.add("active");
+    loadOverview();loadUsers();loadQuestions();loadBracket();listenState();
   }
-  const matches = {};
-  for (let i = 0; i < 16; i++) {
-    matches["m" + i] = {
-      players: [players[i*2], players[i*2+1]],
-      status: "waiting", question: null, qStartAt: null, answers: {}, winnerPhone: null, resolvedAt: null
-    };
-  }
-  const overflowMap = {};
-  overflow.forEach(p => { overflowMap[safeKey(p.phone)] = { username: p.username }; });
-
-  await rtdb.ref("tournament").update({
-    state: "round_32", currentRound: "32", champion: null,
-    startedAt: SRV_TS, roundRevealAt: SRV_TS,
-    "matches/round_32": matches, lobby: null, overflow: overflowMap
-  });
-  // NOTE: activation of these matches (picking a question, starting the
-  // clock) is NOT scheduled here with a setTimeout — that was the bug
-  // ("says 10 seconds, then nothing happens"): if this one browser tab
-  // closed before the timer fired, no one else would ever pick it up.
-  // Instead, checkRoundActivation() below runs on EVERY connected tab
-  // every 2 seconds and activates the round once 10s have passed
-  // according to Firebase's own server clock — so it fires as long as
-  // any single player anywhere still has the page open, not just this one.
-}
-
-async function activateRoundMatches(round) {
-  const roundRef = rtdb.ref("tournament/matches/round_" + round);
-  const snap = await roundRef.once("value");
-  const matches = snap.val() || {};
-  const qSnap = await rtdb.ref("tournament_questions/" + round).once("value");
-  const qData = qSnap.val() || {};
-  const qIds = Object.keys(qData);
-  for (const matchId of Object.keys(matches)) {
-    const m = matches[matchId];
-    if (m.status !== "waiting") continue;
-    // Per-match transaction claim: if two tabs both notice this match is
-    // ready to activate at the same moment, only one of them wins here.
-    const claim = await roundRef.child(matchId + "/status").transaction(cur => cur === "waiting" ? "activating" : undefined);
-    if (!claim.committed) continue;
-    if (!qIds.length) {
-      await resolveNoQuestion(round, matchId, m);
-      continue;
-    }
-    const qId = qIds[Math.floor(Math.random() * qIds.length)];
-    const q = qData[qId];
-    await roundRef.child(matchId).update({
-      status: "live", qStartAt: SRV_TS,
-      question: { qId, question: q.question, answers: q.answers, timeSeconds: q.timeSeconds || 19 }
-    });
-    scheduleBotAnswers(round, matchId, m, q.timeSeconds || 19);
-  }
-}
-
-async function resolveNoQuestion(round, matchId, m) {
-  const winner = Math.random() < 0.5 ? m.players[0] : m.players[1];
-  await rtdb.ref("tournament/matches/round_" + round + "/" + matchId).update({
-    status: "done", winnerPhone: winner.phone, resolvedAt: SRV_TS
-  });
-  maybeAdvanceRound(round);
-}
-
-function scheduleBotAnswers(round, matchId, m, timeSeconds) {
-  m.players.forEach(p => {
-    if (!p.isBot) return;
-    const delay = 2000 + Math.random() * Math.max(1000, (timeSeconds - 3) * 1000);
-    setTimeout(async () => {
-      const ansRef = rtdb.ref("tournament/matches/round_" + round + "/" + matchId + "/answers/" + safeKey(p.phone));
-      const already = await ansRef.once("value");
-      if (already.exists()) return;
-      const mSnap = await rtdb.ref("tournament/matches/round_" + round + "/" + matchId).once("value");
-      const mv = mSnap.val();
-      if (!mv || mv.status !== "live" || !mv.question) return;
-      const qSnap = await rtdb.ref("tournament_questions/" + round + "/" + mv.question.qId).once("value");
-      const qv = qSnap.val();
-      const correctIdx = qv ? qv.correct : 0;
-      const botAnswer = Math.random() < 0.6 ? correctIdx : Math.floor(Math.random() * (mv.question.answers || []).length);
-      await ansRef.set({ choice: botAnswer, at: serverNow() });
-      tryResolveMatch(round, matchId);
-    }, delay);
-  });
-}
-
-// ── LIVE MATCH SCREEN (real player side) ──
-function watchForMyMatch() {
-  const s = currentSession; if (!s) return;
-  if (tourneyStateUnsub) tourneyStateUnsub();
-  const ref = rtdb.ref("tournament/currentRound");
-  const handler = async snap => {
-    const round = snap.val();
-    if (!round) return;
-    const matchesSnap = await rtdb.ref("tournament/matches/round_" + round).once("value");
-    const matches = matchesSnap.val() || {};
-    for (const [matchId, m] of Object.entries(matches)) {
-      const inMatch = m.players.some(p => p.phone === s.phone);
-      if (inMatch) {
-        if (m.status === "done") continue; // already resolved, handled elsewhere
-        openMatch(round, matchId, m);
-        return;
-      }
-    }
-    // Not in this round's bracket at all — if we were on the lobby screen
-    // when the bracket generated and the room was already full (32
-    // first-come players), we won't be in any match. Let them know.
-    if (round === "32" && document.getElementById("s-lobby").classList.contains("active")) {
-      const overflowSnap = await rtdb.ref("tournament/overflow/" + safeKey(s.phone)).once("value");
-      if (overflowSnap.exists()) go("s-not-qualified");
-    }
-  };
-  ref.on("value", handler);
-  tourneyStateUnsub = () => ref.off("value", handler);
-}
-
-// If an opponent's presence entry disappears mid-match (closed tab,
-// killed app, lost connection) for longer than the grace period, the
-// remaining player is automatically advanced instead of waiting forever.
-function watchOpponentPresence(round, matchId, oppPhone) {
-  if (oppPresenceUnsub) oppPresenceUnsub();
-  const ref = rtdb.ref("user_presence/" + safeKey(oppPhone));
-  let missingTimer = null;
-  const handler = snap => {
-    if (snap.exists()) {
-      if (missingTimer) { clearTimeout(missingTimer); missingTimer = null; }
-      return;
-    }
-    if (missingTimer) return;
-    missingTimer = setTimeout(async () => {
-      const statusRef = rtdb.ref("tournament/matches/round_" + round + "/" + matchId + "/status");
-      const res = await statusRef.transaction(cur => (cur === "live" || cur === "waiting") ? "resolving" : undefined);
-      if (!res.committed) return; // match already moved on for another reason
-      const s = currentSession;
-      await rtdb.ref("tournament/matches/round_" + round + "/" + matchId).update({
-        status: "done", winnerPhone: s.phone, correct: null, resolvedAt: SRV_TS, disconnectWin: true
-      });
-      maybeAdvanceRound(round);
-    }, 6000); // 6s grace period for brief reconnects/refreshes
-  };
-  ref.on("value", handler);
-  oppPresenceUnsub = () => { ref.off("value", handler); if (missingTimer) clearTimeout(missingTimer); };
-}
-
-function openMatch(round, matchId, m) {
-  if (myMatchPath === "round_" + round + "/" + matchId) return; // already watching this one
-  if (myMatchUnsub) myMatchUnsub();
-  myMatchPath = "round_" + round + "/" + matchId;
-
-  const s = currentSession;
-  const me  = m.players.find(p => p.phone === s.phone);
-  const opp = m.players.find(p => p.phone !== s.phone);
-  document.getElementById("matchP1").textContent = me.username + " (تۆ)";
-  document.getElementById("matchP2").textContent = opp.username;
-
-  // If the opponent is a real (non-bot) player, watch their presence so
-  // that if they close the app / lose internet mid-match, we don't wait
-  // forever — after a short grace period they're auto-counted as the loser.
-  if (!opp.isBot) watchOpponentPresence(round, matchId, opp.phone);
-  else if (oppPresenceUnsub) { oppPresenceUnsub(); oppPresenceUnsub = null; }
-
-  if (m.status === "waiting") {
-    document.getElementById("revealVs").innerHTML =
-      `<div class="bvs-p me">${me.username}<br><span style="font-size:.7rem;color:var(--muted)">تۆ</span></div>
-       <div class="bvs-x">VS</div>
-       <div class="bvs-p">${opp.username}</div>`;
-    go("s-reveal");
-  } else if (m.status === "live") {
-    go("s-match");
-  }
-
-  const matchRef = rtdb.ref("tournament/" + myMatchPath);
-  const handler = snap => {
-    const mv = snap.val();
-    if (!mv) return;
-    if (mv.status === "waiting") {
-      go("s-reveal");
-    } else if (mv.status === "live" || mv.status === "resolving") {
-      renderMatchLive(round, matchId, mv);
-    } else if (mv.status === "done") {
-      handleMatchDone(round, matchId, mv);
-    }
-  };
-  matchRef.on("value", handler);
-  myMatchUnsub = () => matchRef.off("value", handler);
-}
-
-let matchAnswered = false;
-function renderMatchLive(round, matchId, mv) {
-  go("s-match");
-  const s = currentSession;
-  const me  = mv.players.find(p => p.phone === s.phone);
-  const opp = mv.players.find(p => p.phone !== s.phone);
-  document.getElementById("matchP1").textContent = me.username + " (تۆ)";
-  document.getElementById("matchP2").textContent = opp.username;
-  document.getElementById("matchQ").textContent = mv.question.question;
-
-  const myAns  = (mv.answers || {})[safeKey(me.phone)];
-  const oppAns = (mv.answers || {})[safeKey(opp.phone)];
-  matchAnswered = !!myAns;
-
-  const grid = document.getElementById("matchAGrid"); grid.innerHTML = "";
-  (mv.question.answers || []).forEach((a, i) => {
-    const b = document.createElement("button");
-    b.className = "match-ab" + (myAns && myAns.choice === i ? " mine" : "");
-    b.textContent = a;
-    b.disabled = matchAnswered;
-    b.onclick = () => submitMatchAnswer(round, matchId, i);
-    grid.appendChild(b);
-  });
-
-  document.getElementById("matchStatus").textContent = matchAnswered
-    ? (oppAns ? "هەردووکتان وەڵامتان دایەوە — لە کۆتاییدا دەردەکەوێت..." : "وەڵامەکەت نێردرا — چاوەڕوانی " + opp.username + "...")
-    : "وەڵامێک هەڵبژێرە";
-
-  if (mv.status === "resolving") document.getElementById("matchStatus").textContent = "پێداچوونەوە بۆ ئەنجام...";
-
-  clearInterval(myMatchTimerI);
-  const total = mv.question.timeSeconds;
-  myMatchTimerI = setInterval(() => {
-    const elapsed = (serverNow() - mv.qStartAt) / 1000;
-    const left = Math.max(0, Math.ceil(total - elapsed));
-    document.getElementById("matchTNum").textContent = left;
-    document.getElementById("matchTFill").style.strokeDashoffset = 251.2 * (1 - left / total);
-    document.getElementById("matchTFill").style.stroke = left <= 5 ? "#e63946" : "var(--gold)";
-    if (left <= 0) {
-      clearInterval(myMatchTimerI);
-      tryResolveMatch(round, matchId);
-    }
-  }, 250);
-}
-
-async function submitMatchAnswer(round, matchId, choice) {
-  if (matchAnswered) return;
-  matchAnswered = true;
-  const s = currentSession;
-  await rtdb.ref("tournament/matches/round_" + round + "/" + matchId + "/answers/" + safeKey(s.phone))
-    .set({ choice, at: serverNow() });
-  tryResolveMatch(round, matchId);
-}
-
-async function tryResolveMatch(round, matchId) {
-  const statusRef = rtdb.ref("tournament/matches/round_" + round + "/" + matchId + "/status");
-  const res = await statusRef.transaction(cur => cur === "live" ? "resolving" : undefined);
-  if (!res.committed) return; // already being resolved or already done by another client
-  const matchRef = rtdb.ref("tournament/matches/round_" + round + "/" + matchId);
-  const snap = await matchRef.once("value");
-  const m = snap.val();
-  const qSnap = await rtdb.ref("tournament_questions/" + round + "/" + m.question.qId).once("value");
-  const qv = qSnap.val();
-  const correctIdx = qv ? qv.correct : null;
-  const [p1, p2] = m.players;
-  const a1 = (m.answers || {})[safeKey(p1.phone)];
-  const a2 = (m.answers || {})[safeKey(p2.phone)];
-  const p1ok = a1 && a1.choice === correctIdx;
-  const p2ok = a2 && a2.choice === correctIdx;
-  let winner;
-  if (p1ok && !p2ok) winner = p1;
-  else if (p2ok && !p1ok) winner = p2;
-  else if (p1ok && p2ok) winner = (a1.at <= a2.at) ? p1 : p2;         // both correct — fastest wins
-  else if (a1 && a2)     winner = (a1.at <= a2.at) ? p1 : p2;         // both wrong — fastest (even if wrong) wins
-  else if (a1) winner = p1;
-  else if (a2) winner = p2;
-  else winner = Math.random() < 0.5 ? p1 : p2;                       // neither answered — coin flip
-
-  await matchRef.update({ status: "done", winnerPhone: winner.phone, correct: correctIdx, resolvedAt: SRV_TS });
-  await recordMatchStats(p1, p2, winner);
-  maybeAdvanceRound(round);
-}
-
-async function recordMatchStats(p1, p2, winner) {
-  for (const p of [p1, p2]) {
-    if (p.isBot) continue;
-    const won = p.phone === winner.phone;
-    try {
-      const user = await fbGet("/users/" + p.phone);
-      if (!user) continue;
-      const hist = user.history || [];
-      hist.push({ date: new Date().toLocaleDateString("en-GB"), result: won ? "بردنەوە ✅" : "دەرچوون ❌" });
-      await fbPut("/users/" + p.phone, {
-        ...user,
-        gamesPlayed: (user.gamesPlayed || 0) + 1,
-        wins: (user.wins || 0) + (won ? 1 : 0),
-        history: hist.slice(-30)
-      });
-    } catch (e) {}
-  }
-}
-
-function handleMatchDone(round, matchId, mv) {
-  clearInterval(myMatchTimerI);
-  const s = currentSession;
-  const iWon = mv.winnerPhone === s.phone;
-  const opp = mv.players.find(p => p.phone !== s.phone);
-
-  if (myMatchUnsub) { myMatchUnsub(); myMatchUnsub = null; myMatchPath = null; }
-  if (oppPresenceUnsub) { oppPresenceUnsub(); oppPresenceUnsub = null; }
-
-  if (!iWon) {
-    document.getElementById("elimSub").textContent = mv.disconnectWin
-      ? opp.username + " لە یاریەکە کشایەوە."
-      : opp.username + " براوە بوو لەم گەڕدا. هیوادارین جاری داهاتوو زیاتر بەختت هەبێت!";
-    go("s-eliminated");
-    if (tourneyStateUnsub) { tourneyStateUnsub(); tourneyStateUnsub = null; }
-    return;
-  }
-
-  if (round === "2") {
-    document.getElementById("mrEmoji").textContent = "🏆";
-    document.getElementById("mrTitle").textContent = "براوەی ئەمشەوی!";
-    document.getElementById("mrSub").textContent = "پیرۆزە! تۆ براوەی گشتی تۆرنمێنتی ئەمشەوی!";
-    go("s-match-result");
-    if (tourneyStateUnsub) { tourneyStateUnsub(); tourneyStateUnsub = null; }
-    return;
-  }
-
-  document.getElementById("mrEmoji").textContent = "✅";
-  document.getElementById("mrTitle").textContent = mv.disconnectWin ? "یاریزانەکەت کشایەوە — تۆ چوویتە پێش!" : "بردتەوە!";
-  document.getElementById("mrSub").textContent = "چاوەڕوانی دەوری داهاتوو بکە...";
-  go("s-match-result");
-  setTimeout(() => {
-    document.getElementById("waitRoundSub").textContent = "یاریزانانی تر هێشتا یاری دەکەن...";
-    go("s-wait-round");
-  }, 2200);
-}
-
-// ── ROUND ADVANCE (claimed via transaction so only one client does it) ──
-async function maybeAdvanceRound(round) {
-  const roundRef = rtdb.ref("tournament/matches/round_" + round);
-  const snap = await roundRef.once("value");
-  const matches = snap.val() || {};
-  const ids = Object.keys(matches);
-  const allDone = ids.length > 0 && ids.every(id => matches[id].status === "done");
-  if (!allDone) return;
-
-  const lockRes = await rtdb.ref("tournament/advancing_" + round).transaction(cur => cur ? undefined : true);
-  if (!lockRes.committed) return; // another client already advancing this round
-
-  const winners = ids.map(id => matches[id]).map(m => m.players.find(p => p.phone === m.winnerPhone));
-
-  if (round === "2") {
-    const champion = winners[0];
-    await rtdb.ref("tournament").update({ state: "finished", champion: { phone: champion.phone, username: champion.username } });
-    await rtdb.ref("tournament_history/" + todayStr()).set({
-      champion: { phone: champion.phone, username: champion.username }, finishedAt: SRV_TS
-    });
-    if (!champion.isBot) {
-      try {
-        const user = await fbGet("/users/" + champion.phone);
-        if (user) await fbPut("/users/" + champion.phone, { ...user, trophies: (user.trophies || 0) + 1 });
-      } catch (e) {}
-    }
-    return;
-  }
-
-  const nextRound = ROUND_SEQUENCE[ROUND_SEQUENCE.indexOf(round) + 1];
-  const nextMatches = {};
-  for (let i = 0; i < winners.length / 2; i++) {
-    nextMatches["m" + i] = {
-      players: [winners[i*2], winners[i*2+1]],
-      status: "waiting", question: null, qStartAt: null, answers: {}, winnerPhone: null, resolvedAt: null
-    };
-  }
-  await rtdb.ref("tournament").update({
-    state: "round_" + nextRound, currentRound: nextRound, roundRevealAt: SRV_TS,
-    ["matches/round_" + nextRound]: nextMatches
-  });
-  // (No setTimeout here — see checkRoundActivation watchdog below.)
-}
-
-// ═══════════════════════════════════════════════════════
-//  SELF-HEALING WATCHDOG — runs on every connected tab, every 2s.
-//  This is what actually fixes the "says 10 seconds then nothing
-//  happens" bug: instead of trusting one browser tab's setTimeout to
-//  survive, every open tab independently checks Firebase's server
-//  clock and nudges the game forward if something is overdue. As long
-//  as ANY single player (or the admin panel) has the page open
-//  anywhere, the tournament keeps moving.
-// ═══════════════════════════════════════════════════════
-async function checkRoundActivation() {
-  const snap = await rtdb.ref("tournament").once("value");
-  const t = snap.val();
-  if (!t || !t.currentRound || !t.roundRevealAt || t.state === "finished") return;
-  const elapsed = serverNow() - t.roundRevealAt;
-  if (elapsed < 10000) return;
-  const lockRes = await rtdb.ref("tournament/activated_" + t.currentRound).transaction(cur => cur ? undefined : true);
-  if (!lockRes.committed) return; // some other tab already handled this round's activation
-  activateRoundMatches(t.currentRound);
-}
-
-async function watchdogTick() {
-  const snap = await rtdb.ref("tournament").once("value");
-  const t = snap.val();
-  if (!t || !t.currentRound || t.state === "finished") return;
-  const round = t.currentRound;
-  const matchesSnap = await rtdb.ref("tournament/matches/round_" + round).once("value");
-  const matches = matchesSnap.val() || {};
-  for (const [matchId, m] of Object.entries(matches)) {
-    if (m.status === "live" && m.qStartAt && m.question) {
-      // A match whose timer has clearly run out but never got resolved
-      // (e.g. both players' own tabs were closed) — any watchdog can
-      // still close it out. tryResolveMatch is transaction-guarded so
-      // calling it redundantly from multiple tabs is harmless.
-      const elapsed = (serverNow() - m.qStartAt) / 1000;
-      if (elapsed >= (m.question.timeSeconds + 2)) tryResolveMatch(round, matchId);
-      // Re-arm any bot answer that never got scheduled/fired (e.g. this
-      // tab wasn't the one that originally activated the match).
-      m.players.forEach(p => {
-        if (p.isBot && !((m.answers || {})[safeKey(p.phone)])) {
-          scheduleBotAnswers(round, matchId, m, m.question.timeSeconds);
-        }
-      });
-    }
-  }
-}
-
-setInterval(checkRoundActivation, 2000);
-setInterval(watchdogTick, 3000);
-
-
-// ── FINAL SPECTATE (anyone watching from the home page) ──
-let specUnsub = null;
-function startSpectate() {
-  go("s-spectate");
-  if (specUnsub) specUnsub();
-  const ref = rtdb.ref("tournament/matches/round_2/m0");
-  const handler = snap => {
-    const m = snap.val();
-    if (!m) { document.getElementById("specQ").textContent = "فینال هێشتا دەستپێنەکردووە..."; return; }
-    document.getElementById("specP1").textContent = m.players[0].username;
-    document.getElementById("specP2").textContent = m.players[1].username;
-    if (m.status === "waiting") { document.getElementById("specQ").textContent = "یاری بەم زوانە دەستپێدەکات..."; return; }
-    if (!m.question) return;
-    document.getElementById("specQ").textContent = m.question.question;
-    const grid = document.getElementById("specAGrid"); grid.innerHTML = "";
-    (m.question.answers || []).forEach((a, i) => {
-      const d = document.createElement("div");
-      d.className = "match-ab" + (m.status === "done" && i === m.correct ? " ok" : "");
-      d.textContent = a;
-      grid.appendChild(d);
-    });
-    if (m.status === "live" && m.qStartAt) {
-      clearInterval(myMatchTimerI);
-      const total = m.question.timeSeconds;
-      myMatchTimerI = setInterval(() => {
-        const left = Math.max(0, Math.ceil(total - (serverNow() - m.qStartAt) / 1000));
-        document.getElementById("specTNum").textContent = left;
-        document.getElementById("specTFill").style.strokeDashoffset = 251.2 * (1 - left / total);
-        if (left <= 0) clearInterval(myMatchTimerI);
-      }, 250);
-    }
-    if (m.status === "done") {
-      const winnerName = m.players.find(p => p.phone === m.winnerPhone)?.username || "—";
-      document.getElementById("specQ").textContent = "🏆 براوە: " + winnerName;
-    }
-  };
-  ref.on("value", handler);
-  specUnsub = () => ref.off("value", handler);
-}
-
-// ═══════════════════════════════════════════════════════
-//  NOTIF + BOOT
-// ═══════════════════════════════════════════════════════
-function notif(msg, type) {
-  const el = document.getElementById("notif");
-  el.textContent = msg; el.className = "notif " + (type || "inf") + " show";
-  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 3000);
-}
-
-bootSession();
+});
 </script>
 </body>
 </html>
