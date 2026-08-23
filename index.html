@@ -7,9 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800;900&family=Oxanium:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
 <style>
 :root{
   --bg:#07080f; --surface:#0f1120;
@@ -207,6 +207,11 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .result-title{font-size:1.6rem;font-weight:900;text-align:center;margin-bottom:8px;}
 .result-sub{color:var(--muted);text-align:center;font-size:.9rem;max-width:400px;}
 
+/* ANNOUNCEMENT BANNER (set from admin.html's "ئاگادارکردنەوە" panel) */
+.announce-banner{width:100%;max-width:560px;background:rgba(29,78,216,.12);
+  border:1.5px solid rgba(29,78,216,.4);border-radius:16px;padding:14px 18px;
+  text-align:center;margin-bottom:14px;font-size:.9rem;color:#a9c2ff;}
+
 /* CHAMPION BANNER ON HOME */
 .champ-banner{width:100%;max-width:560px;background:linear-gradient(135deg,rgba(240,180,41,.18),rgba(230,57,70,.12));
   border:2px solid rgba(240,180,41,.55);border-radius:20px;padding:20px;text-align:center;margin-bottom:18px;}
@@ -298,6 +303,8 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
     <div class="cd-off-badge" id="cdOffBadge">😴 ئەمشەو هەینییە — یاری نییە</div>
     <div class="week-strip" id="weekStrip"></div>
   </div>
+
+  <div class="announce-banner" id="announceBanner" style="display:none"></div>
 
   <div class="champ-banner" id="champBanner" style="display:none">
     <div class="ce">🏆</div>
@@ -519,7 +526,19 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 
 <script>
 // FB / fbGet / fbPut / fbDelete / sha256 / normPhone / safeKey / rtdb /
-// SRV_TS / serverNow all come from firebase-config.js (loaded in <head>).
+// SRV_TS / serverNow all come from firebase.js (loaded in <head>).
+
+// Declared here, at the very top, on purpose: this used to be declared
+// much further down the file (right next to where it's mainly updated),
+// but tickCountdown() — which runs once immediately on every page load —
+// reads it too. Because tickCountdown() ran BEFORE this line, every load
+// hit a "used before initialization" error that silently killed the rest
+// of the script, including bootSession() at the very end. That one bug
+// was the real cause of: the countdown staying frozen at 00, registration
+// looking like it failed until you refreshed, and login not restoring
+// reliably. Keeping the declaration up here guarantees it always exists
+// before anything can read it.
+let liveTournamentState = "idle";
 
 // ═══════════════════════════════════════════════════════
 //  NAV
@@ -650,9 +669,16 @@ async function doRegister() {
     };
     await fbPut("/users/" + phone, userObj);
     await saveSession({ phone, username: name });
+    // From this point the account is created and the session is saved —
+    // both already succeeded. Anything below is just follow-up UI, so it
+    // gets its own try/catch: a screen-refresh glitch here must never make
+    // a successful registration look like it failed (that was the "says
+    // error, but you're actually logged in after a refresh" bug).
     notif("هەژمار دروستکرا — بەخێربێیت " + name + "! 🎉", "suc");
-    applySessionUI();
+    try { applySessionUI(); } catch (e2) { console.warn(e2); }
     go("s-home");
+    btn.disabled = false; btn.textContent = "خۆتۆمارکردن";
+    return;
   } catch (e) {
     notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
   }
@@ -684,8 +710,10 @@ async function doLogin() {
     }
     await saveSession({ phone, username: user.username });
     notif("بەخێربێیتەوە " + user.username + " ✓", "suc");
-    applySessionUI();
+    try { applySessionUI(); } catch (e2) { console.warn(e2); }
     go("s-dashboard");
+    btn.disabled = false; btn.textContent = "چوونەژوورەوە";
+    return;
   } catch (e) {
     notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
   }
@@ -764,6 +792,22 @@ function initPresence() {
   });
 }
 initPresence();
+
+// Shows whatever the admin has posted from the "📢 ئاگادارکردنەوە" panel
+// (/announcement) and the special note for tonight (/specialNote), if any.
+function initAnnouncements() {
+  const banner = document.getElementById("announceBanner");
+  let ann = "", note = "";
+  const render = () => {
+    const parts = [ann, note].filter(Boolean);
+    if (!parts.length) { banner.style.display = "none"; return; }
+    banner.innerHTML = parts.map(p => "📢 " + p).join("<br>");
+    banner.style.display = "block";
+  };
+  rtdb.ref("announcement").on("value", snap => { const v = snap.val(); ann = (v && v.text) ? v.text : ""; render(); });
+  rtdb.ref("specialNote").on("value", snap => { note = snap.val() || ""; render(); });
+}
+initAnnouncements();
 
 function initUserPresence(phone) {
   const myRef = rtdb.ref("user_presence/" + safeKey(phone));
@@ -912,7 +956,7 @@ function safeKey(phone) { return String(phone).replace(/[^0-9a-zA-Z]/g, ""); }
 
 // ── Home-screen wiring: join button + champion banner + spectate link ──
 let homeTourneyListenerAttached = false;
-let liveTournamentState = "idle"; // updated by the listener below, read by tickCountdown()
+// (liveTournamentState is declared once, at the very top of this script.)
 function refreshHomeTourneyUI() {
   const s = currentSession;
   document.getElementById("joinRoomWrap").style.display = s ? "flex" : "none";
@@ -995,6 +1039,23 @@ function watchLobby() {
   };
   ref.on("value", handler);
   lobbyUnsub = () => ref.off("value", handler);
+
+  // The moment the tournament leaves lobby_open (bracket generated), the
+  // room is locked — no one new can join anymore. watchForMyMatch() (also
+  // running) will move a qualified player straight into their match, or
+  // show "room was full" to someone who didn't make the first-32 cut.
+  // This just updates the lobby screen's own message immediately so it
+  // doesn't sit showing a stale "waiting..." text during that handoff.
+  const stateRef = rtdb.ref("tournament/state");
+  const stateHandler = snap => {
+    const st = snap.val();
+    if (st && st !== "idle" && st !== "lobby_open" && document.getElementById("s-lobby").classList.contains("active")) {
+      document.getElementById("lobbySub").textContent = "ژوورەکە قوفڵکرا — بڕاکەت دروستکرا، چاوەڕوانی ئەنجام بکە...";
+    }
+  };
+  stateRef.on("value", stateHandler);
+  const prevUnsub = lobbyUnsub;
+  lobbyUnsub = () => { prevUnsub(); stateRef.off("value", stateHandler); };
 }
 
 // ── AUTO-TRIGGER AT 9PM (best-effort client-elected — see note above) ──
