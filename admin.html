@@ -561,18 +561,29 @@ async function forceStartBracket(){
         answers:{},winnerPhone:null,resolvedAt:null
       };
     }
-    await fbPut("/tournament/state","round_32");
-    await fbPut("/tournament/currentRound","32");
-    await fbPut("/tournament/champion",null);
-    await fbPut("/tournament/matches/round_32",matches);
-    await fbPut("/tournament/lobby",null);
-    // FIX: this field was missing entirely. index.html's self-healing
-    // watchdog reads roundRevealAt to know exactly when the "10 seconds
-    // until questions start" window is over — without it, the round-32
-    // matches would sit at "waiting" forever and the game would never
-    // actually begin (this was the "doesn't start a new game" bug).
-    await fbPut("/tournament/roundRevealAt", firebase.database.ServerValue.TIMESTAMP);
-    notif("✅ یاری دەستیپێکرد — دەوری ٣٢","suc");
+    // FIX: this used to write individual fields with fbPut, which left
+    // any leftover lock key from an earlier test run untouched —
+    // specifically /tournament/activated_32, which the site's watchdog
+    // uses to make sure only one browser tab starts each round's
+    // questions. If that key was already "true" from a previous force
+    // start, the watchdog would see the round as "already activated" and
+    // never actually pick a question or start the timer — matches would
+    // just sit at "waiting" forever. Writing the WHOLE /tournament node
+    // in one shot (like a real reset) guarantees there's nothing stale
+    // left behind, no matter how many times this button gets pressed.
+    await fbPut("/tournament", {
+      state: "round_32",
+      currentRound: "32",
+      champion: null,
+      matches: { round_32: matches },
+      roundRevealAt: firebase.database.ServerValue.TIMESTAMP,
+      // Also claims today's auto-9PM slot, so if you're testing this
+      // after 9PM real time, the site's own automatic trigger doesn't
+      // ALSO fire a few seconds later and overwrite this bracket with a
+      // second, separate one built from an (by then empty) lobby.
+      gameDate: (() => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); })()
+    });
+    notif("✅ یاری دەستیپێکرد — دەوری ٣٢ (پرسیارەکان لە ١٠ چرکەدا دەردەکەون)","suc");
     loadBracket();
   }catch(e){notif("هەڵە: "+e.message,"err");}
 }
