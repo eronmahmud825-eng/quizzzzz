@@ -314,30 +314,44 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 
 <div class="notif" id="notif"></div>
 
-<script src="firebase.js"></script>
 <script>
-// If firebase.js failed to load (wrong folder, wrong filename, offline,
-// or the two Firebase SDK <script> tags above it didn't load), every
-// button on this page would otherwise fail with a cryptic "fbGet is not
-// defined" — instead show one clear banner that says exactly what to check.
-if (typeof fbGet !== "function" || typeof rtdb === "undefined") {
-  document.write(
-    '<div style="position:fixed;inset:0;z-index:99999;background:#07080f;color:#fff;' +
-    'display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;' +
-    'font-family:sans-serif;direction:rtl">' +
-    '<div style="max-width:480px;background:rgba(230,57,70,.12);border:2px solid #e63946;' +
-    'border-radius:16px;padding:28px">' +
-    '<div style="font-size:2.2rem;margin-bottom:10px">⚠️</div>' +
-    '<div style="font-size:1.1rem;font-weight:800;color:#ff9a9a;margin-bottom:12px">firebase.js بار نەبووە</div>' +
-    '<div style="font-size:.9rem;color:#ddd;line-height:1.9;text-align:right">' +
-    '١. دڵنیابەرەوە فایلی <b>firebase.js</b> لە هەمان فۆڵدەری ئەم پەڕەیەدایە (هەمان ناو، بێ "(1)" یان "(2)")<br>' +
-    '٢. ئینتەرنێتت پەیوەستە؟ (پێویستە بۆ بارکردنی Firebase SDK)<br>' +
-    '٣. باشترین ڕێگا: فایلەکان لەسەر ماڵپەڕێکی ڕاستەقینە (وەک GitHub Pages) باربکە، نەک بە کرتەکردنی دووانی لەسەر دیسک' +
-    '</div></div></div>'
-  );
-  throw new Error("firebase.js not loaded — halting the rest of the script so nothing fails silently.");
+// ═══════════════════════════════════════════════════════
+//  FIREBASE CONFIG + HELPERS — inlined directly here (same reasoning as
+//  index.html: a separate firebase.js file kept failing to load once
+//  this moved to GitHub Pages, so it's no longer a separate file at all.
+// ═══════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDI-6wN-2yGjUJftd4oj8GHJlC4nlAcGdY",
+  authDomain: "quizgame2-cd4d5.firebaseapp.com",
+  databaseURL: "https://quizgame2-cd4d5-default-rtdb.firebaseio.com",
+  projectId: "quizgame2-cd4d5",
+  storageBucket: "quizgame2-cd4d5.firebasestorage.app",
+  messagingSenderId: "809610517302",
+  appId: "1:809610517302:web:1544c2cf19ff24a5127197",
+  measurementId: "G-7KB3JQCY36"
+};
+firebase.initializeApp(firebaseConfig);
+const rtdb = firebase.database();
+const FB = "https://quizgame2-cd4d5-default-rtdb.firebaseio.com";
+async function fbGet(path) {
+  const r = await fetch(FB + path + ".json");
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
 }
-
+async function fbPut(path, data) {
+  const r = await fetch(FB + path + ".json", {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+async function fbDelete(path) {
+  const r = await fetch(FB + path + ".json", { method: "DELETE" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+</script>
+<script>
 // ═══════════════════════════════════════════════
 //  ADMIN AUTH
 // ═══════════════════════════════════════════════
