@@ -528,6 +528,29 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 // FB / fbGet / fbPut / fbDelete / sha256 / normPhone / safeKey / rtdb /
 // SRV_TS / serverNow all come from firebase.js (loaded in <head>).
 
+// If firebase.js failed to load (wrong folder, wrong filename, offline,
+// or the two Firebase SDK <script> tags above it didn't load), every
+// button on this page would otherwise fail completely silently or with a
+// cryptic "fbGet is not defined" — instead show one clear banner that
+// says exactly what to check.
+if (typeof fbGet !== "function" || typeof rtdb === "undefined") {
+  document.write(
+    '<div style="position:fixed;inset:0;z-index:99999;background:#07080f;color:#fff;' +
+    'display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;' +
+    'font-family:sans-serif;direction:rtl">' +
+    '<div style="max-width:480px;background:rgba(230,57,70,.12);border:2px solid #e63946;' +
+    'border-radius:16px;padding:28px">' +
+    '<div style="font-size:2.2rem;margin-bottom:10px">⚠️</div>' +
+    '<div style="font-size:1.1rem;font-weight:800;color:#ff9a9a;margin-bottom:12px">firebase.js بار نەبووە</div>' +
+    '<div style="font-size:.9rem;color:#ddd;line-height:1.9;text-align:right">' +
+    '١. دڵنیابەرەوە فایلی <b>firebase.js</b> لە هەمان فۆڵدەری ئەم پەڕەیەدایە (هەمان ناو، بێ "(1)" یان "(2)")<br>' +
+    '٢. ئینتەرنێتت پەیوەستە؟ (پێویستە بۆ بارکردنی Firebase SDK)<br>' +
+    '٣. باشترین ڕێگا: فایلەکان لەسەر ماڵپەڕێکی ڕاستەقینە (وەک GitHub Pages) باربکە، نەک بە کرتەکردنی دووانی لەسەر دیسک' +
+    '</div></div></div>'
+  );
+  throw new Error("firebase.js not loaded — halting the rest of the script so nothing fails silently.");
+}
+
 // Declared here, at the very top, on purpose: this used to be declared
 // much further down the file (right next to where it's mainly updated),
 // but tickCountdown() — which runs once immediately on every page load —
