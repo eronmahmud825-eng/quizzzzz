@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ئەدمین — کوئیز گەیم</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800;900&family=Oxanium:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --bg:#07080f;--glass:rgba(255,255,255,.06);--gb:rgba(255,255,255,.11);
+  --gold:#f0b429;--red:#e63946;--blue:#1d4ed8;--ok:#06d6a0;
+  --purple:#7c3aed;--text:#f0f0f0;--muted:rgba(240,240,240,.45);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans Arabic',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 50% at 15% 15%,rgba(124,58,237,.1),transparent 55%),
+             radial-gradient(ellipse 60% 45% at 85% 85%,rgba(29,78,216,.1),transparent 55%);}
+
+/* LOGIN */
+.screen{display:none;position:relative;z-index:1;min-height:100vh;padding:24px 16px;
+  flex-direction:column;align-items:center;justify-content:center;animation:fi .35s ease;}
+.screen.active{display:flex;}
+@keyframes fi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--glass);border:1.5px solid var(--gb);border-radius:20px;padding:28px;
+  backdrop-filter:blur(20px);width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.card h2{font-size:1.35rem;font-weight:800;margin-bottom:16px;text-align:center;color:var(--gold);}
+.fg{margin-bottom:13px;}
+.fg label{display:block;font-size:.83rem;color:var(--muted);margin-bottom:5px;}
+.fg input,.fg select,.fg textarea{
+  width:100%;padding:11px 15px;background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);
+  font-family:'Noto Sans Arabic',sans-serif;font-size:.95rem;outline:none;transition:border-color .2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--gold);}
+.fg select option{background:#111;color:#fff;}
+.fg textarea{resize:vertical;min-height:80px;}
+
+/* ADMIN LAYOUT */
+#s-admin{justify-content:flex-start;padding-top:0;}
+.admin-wrap{display:flex;min-height:100vh;width:100%;}
+.sidebar{width:220px;flex-shrink:0;background:rgba(255,255,255,.03);
+  border-left:1px solid rgba(255,255,255,.07);padding:22px 14px;
+  display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+@media(max-width:640px){.sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;padding:10px;}}
+.sidebar h3{font-family:'Oxanium',sans-serif;font-size:.7rem;letter-spacing:3px;
+  color:var(--muted);text-transform:uppercase;margin-bottom:8px;padding:0 4px;}
+.nav-btn{width:100%;padding:10px 14px;border:none;border-radius:10px;text-align:right;
+  background:transparent;color:var(--muted);font-family:'Noto Sans Arabic',sans-serif;
+  font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.nav-btn:hover,.nav-btn.active{background:rgba(255,255,255,.07);color:var(--text);}
+.nav-btn.active{border-right:3px solid var(--gold);color:var(--gold);}
+.main-area{flex:1;padding:24px 20px;overflow-y:auto;}
+.panel{display:none;}
+.panel.active{display:block;}
+.panel-title{font-family:'Oxanium',sans-serif;font-size:1.2rem;font-weight:800;
+  color:var(--gold);margin-bottom:18px;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;}
+
+/* BUTTONS */
+.btn{padding:10px 20px;border:none;border-radius:10px;font-family:'Noto Sans Arabic',sans-serif;
+  font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn:hover{transform:translateY(-2px);}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.btn-gold  {background:linear-gradient(135deg,#c28a00,var(--gold));color:#1a1000;}
+.btn-red   {background:linear-gradient(135deg,#b91c2a,var(--red));color:#fff;}
+.btn-blue  {background:linear-gradient(135deg,#1034a6,var(--blue));color:#fff;}
+.btn-ok    {background:linear-gradient(135deg,#009060,var(--ok));color:#001a0f;}
+.btn-purple{background:linear-gradient(135deg,#5b21b6,var(--purple));color:#fff;}
+.btn-ghost {background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);color:var(--text);}
+.btn-sm    {padding:6px 12px;font-size:.78rem;border-radius:8px;}
+
+/* STAT CARDS */
+.stat-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.stat-c{flex:1;min-width:120px;background:var(--glass);border:1.5px solid var(--gb);
+  border-radius:14px;padding:14px;text-align:center;}
+.stat-c .sv{font-family:'Oxanium',sans-serif;font-size:1.8rem;font-weight:800;color:var(--gold);}
+.stat-c .sl{font-size:.7rem;color:var(--muted);margin-top:4px;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:.84rem;}
+.tbl th{text-align:right;padding:9px 10px;color:var(--muted);font-weight:700;
+  border-bottom:1px solid rgba(255,255,255,.08);}
+.tbl td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05);}
+.tbl tr:hover td{background:rgba(255,255,255,.03);}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:700;}
+.badge-ok    {background:rgba(6,214,160,.18);border:1px solid rgba(6,214,160,.4);color:#6effd8;}
+.badge-ng    {background:rgba(230,57,70,.18);border:1px solid rgba(230,57,70,.4);color:#ffaaaa;}
+.badge-wait  {background:rgba(240,180,41,.15);border:1px solid rgba(240,180,41,.35);color:var(--gold);}
+.badge-live  {background:rgba(230,57,70,.15);border:1px solid rgba(230,57,70,.4);color:#ffaaaa;
+  animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* MATCH BRACKET */
+.bracket{display:flex;gap:16px;overflow-x:auto;padding-bottom:12px;}
+.bround{min-width:180px;}
+.bround-title{font-size:.72rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:10px;font-family:'Oxanium',sans-serif;}
+.bmatch{background:var(--glass);border:1.5px solid var(--gb);border-radius:10px;
+  padding:10px;margin-bottom:8px;font-size:.8rem;}
+.bmatch.live{border-color:rgba(230,57,70,.5);}
+.bmatch.done{border-color:rgba(6,214,160,.35);}
+.bplayer{padding:3px 0;display:flex;justify-content:space-between;align-items:center;}
+.bplayer.winner{color:var(--ok);font-weight:800;}
+.bplayer.loser{opacity:.4;}
+
+/* Q ANSWER INPUTS */
+.a2grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.crgrp{display:flex;gap:7px;flex-wrap:wrap;}
+.crlbl{cursor:pointer;padding:7px 14px;border-radius:8px;
+  border:2px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+  font-family:'Oxanium',sans-serif;font-weight:700;transition:all .2s;}
+.crlbl.on{border-color:var(--ok);background:rgba(6,214,160,.12);color:var(--ok);}
+.qrow{display:flex;justify-content:space-between;align-items:center;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:9px;padding:9px 12px;margin-bottom:7px;gap:10px;font-size:.82rem;}
+.qdel{background:rgba(230,57,70,.14);border:1px solid rgba(230,57,70,.3);color:#ff8888;
+  padding:4px 10px;border-radius:7px;cursor:pointer;font-size:.75rem;flex-shrink:0;}
+.qdel:hover{background:rgba(230,57,70,.3);}
+
+/* ANNOUNCE */
+.ann-box{background:var(--glass);border:1.5px solid var(--gb);border-radius:14px;padding:16px;margin-bottom:14px;}
+.ann-box h4{color:var(--gold);font-size:.9rem;margin-bottom:10px;}
+
+/* NOTIF */
+.notif{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  padding:11px 22px;border-radius:50px;font-weight:700;font-size:.88rem;z-index:300;
+  transition:transform .3s;pointer-events:none;white-space:nowrap;}
+.notif.show{transform:translateX(-50%) translateY(0);}
+.notif.suc{background:var(--ok);color:#001a0f;}
+.notif.err{background:var(--red);color:#fff;}
+.notif.inf{background:var(--blue);color:#fff;}
+.divider{border:none;border-top:1px solid rgba(255,255,255,.08);margin:16px 0;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="s-login" class="screen active">
+  <div class="card">
+    <h2>⚙️ ئەدمین — چوونەژوورەوە</h2>
+    <div class="fg"><label>وشەی نهێنی ئەدمین</label>
+      <input type="password" id="aPw" placeholder="••••••" onkeydown="if(event.key==='Enter')adminLogin()"/>
+    </div>
+    <button class="btn btn-gold" onclick="adminLogin()" style="width:100%">داخلبوون</button>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="window.location.href='index.html'"
+        style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem">
+        ← گەڕانەوە بۆ سایت
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="s-admin" class="screen">
+  <div class="admin-wrap">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div>
+        <h3>مەنیو</h3>
+        <button class="nav-btn active" onclick="showPanel('p-overview')">📊 گشتی</button>
+        <button class="nav-btn" onclick="showPanel('p-users')">👥 بەکارهێنەران</button>
+        <button class="nav-btn" onclick="showPanel('p-questions')">❓ پرسیارەکان</button>
+        <button class="nav-btn" onclick="showPanel('p-tournament')">🏆 تۆرنمێنت</button>
+        <button class="nav-btn" onclick="showPanel('p-announce')">📢 ئاگادارکردنەوە</button>
+      </div>
+      <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)">
+        <button class="nav-btn" onclick="adminLogout()">🚪 دەرچوون</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-area">
+
+      <!-- OVERVIEW -->
+      <div id="p-overview" class="panel active">
+        <div class="panel-title">📊 گشتی</div>
+        <div class="stat-row">
+          <div class="stat-c"><div class="sv" id="ovUsers">—</div><div class="sl">بەکارهێنەر</div></div>
+          <div class="stat-c"><div class="sv" id="ovOnline">—</div><div class="sl">ئۆنلاین</div></div>
+          <div class="stat-c"><div class="sv" id="ovQuestions">—</div><div class="sl">پرسیار</div></div>
+          <div class="stat-c"><div class="sv" id="ovState">—</div><div class="sl">حاڵەتی یاری</div></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ok"    onclick="openLobbyNow()">🔓 ژووری یاری بکەرەوە</button>
+          <button class="btn btn-red"   onclick="forceEndGame()">⛔ کۆتایی پێهێنانی یاری</button>
+          <button class="btn btn-ghost" onclick="loadOverview()">🔄 نوێکردنەوە</button>
+        </div>
+        <div class="divider"></div>
+        <div id="ovLog" style="font-size:.8rem;color:var(--muted);line-height:2"></div>
+      </div>
+
+      <!-- USERS -->
+      <div id="p-users" class="panel">
+        <div class="panel-title">👥 بەکارهێنەران</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <input type="text" id="userSearch" placeholder="گەڕان بە ناو یان ژمارە..."
+            style="flex:1;padding:9px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:9px;color:var(--text);font-family:'Noto Sans Arabic',sans-serif;font-size:.88rem;outline:none"
+            oninput="filterUsers()"/>
+          <button class="btn btn-ghost btn-sm" onclick="loadUsers()">🔄</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>ناو</th><th>ژمارە</th><th>🏆</th><th>یاری</th><th>بردنەوە</th><th>کردار</th></tr></thead>
+            <tbody id="userTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- QUESTIONS -->
+      <div id="p-questions" class="panel">
+        <div class="panel-title">❓ بەڕێوەبردنی پرسیارەکان</div>
+
+        <!-- Add Question -->
+        <div class="ann-box">
+          <h4>➕ زیادکردنی پرسیاری نوێ</h4>
+          <div class="fg"><label>دەوری تۆرنمێنت</label>
+            <select id="qRound">
+              <option value="32">دەوری ٣٢</option>
+              <option value="16">دەوری ١٦</option>
+              <option value="8">چوارەکەم (٨)</option>
+              <option value="4">نیوفینال (٤)</option>
+              <option value="2">فینال (٢)</option>
+            </select>
+          </div>
+          <div class="fg"><label>پرسیار</label>
+            <textarea id="qText" placeholder="پرسیار بنووسە..."></textarea>
+          </div>
+          <div class="fg"><label>وەڵامەکان (A و B پێویستن)</label>
+            <div class="a2grid">
+              <input type="text" id="qa0" placeholder="A"/>
+              <input type="text" id="qa1" placeholder="B"/>
+              <input type="text" id="qa2" placeholder="C — ئارەزوومەندانە"/>
+              <input type="text" id="qa3" placeholder="D — ئارەزوومەندانە"/>
+            </div>
+          </div>
+          <div class="fg"><label>وەڵامی ڕاست</label>
+            <div class="crgrp">
+              <label class="crlbl" id="qcr0" onclick="pickQCr(0)">A</label>
+              <label class="crlbl" id="qcr1" onclick="pickQCr(1)">B</label>
+              <label class="crlbl" id="qcr2" onclick="pickQCr(2)">C</label>
+              <label class="crlbl" id="qcr3" onclick="pickQCr(3)">D</label>
+            </div>
+          </div>
+          <div class="fg"><label>کاتی وەڵامدان (چرکە)</label>
+            <input type="number" id="qTime" value="19" min="10" max="60" style="width:120px"/>
+          </div>
+          <button class="btn btn-gold" onclick="addQuestion()">💾 پاراستن</button>
+        </div>
+
+        <!-- Question List -->
+        <div class="fg"><label>پرسیارەکانی</label>
+          <select id="qRoundFilter" onchange="loadQuestions()">
+            <option value="32">دەوری ٣٢</option>
+            <option value="16">دەوری ١٦</option>
+            <option value="8">چوارەکەم</option>
+            <option value="4">نیوفینال</option>
+            <option value="2">فینال</option>
+          </select>
+        </div>
+        <div id="qList" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+
+      <!-- TOURNAMENT -->
+      <div id="p-tournament" class="panel">
+        <div class="panel-title">🏆 کۆنترۆڵی تۆرنمێنت</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+          <button class="btn btn-ok"    onclick="openLobbyNow()">🔓 کردنەوەی ژووری یاری</button>
+          <button class="btn btn-gold"  onclick="forceStartBracket()">⚡ دەستپێکردنی یاری ئێستا</button>
+          <button class="btn btn-red"   onclick="forceEndGame()">⛔ کۆتایی پێهێنان</button>
+          <button class="btn btn-ghost" onclick="loadBracket()">🔄 نوێکردنەوە</button>
+        </div>
+        <div style="margin-bottom:8px;color:var(--muted);font-size:.82rem">
+          حاڵەت: <span id="tState" style="color:var(--gold);font-weight:800">—</span>
+          &nbsp;|&nbsp; ژووری یاری: <span id="tLobby" style="color:var(--gold)">—</span>
+        </div>
+        <div class="bracket" id="bracketWrap"></div>
+      </div>
+
+      <!-- ANNOUNCE -->
+      <div id="p-announce" class="panel">
+        <div class="panel-title">📢 ئاگادارکردنەوە و مەسەج</div>
+        <div class="ann-box">
+          <h4>🌐 مەسەجی گشتی (نیشاندراو بۆ هەموو کەسان لە هۆم)</h4>
+          <div class="fg"><textarea id="annText" rows="3" placeholder="مەسەجت بنووسە..."></textarea></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-gold" onclick="saveAnnouncement()">نێردن</button>
+            <button class="btn btn-ghost" onclick="clearAnnouncement()">سڕینەوە</button>
+          </div>
+        </div>
+        <div class="ann-box">
+          <h4>⏰ گۆڕینی کاتی یاری (هەینی بەخۆیەوە گرت)</h4>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">
+            یاری ئۆتۆماتیکی هەموو شەو (بەجگە لە هەینی) کاتژمێر ٩ی شەودا دەستپێدەکات.
+          </p>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="fg" style="margin:0;flex:1">
+              <label>پەیامی تایبەت بۆ ئەمشەو</label>
+              <input type="text" id="specialNote" placeholder="بۆ نموونە: یاری تایبەت بۆ جەژنی..."/>
+            </div>
+            <button class="btn btn-blue" onclick="saveSpecialNote()" style="margin-top:18px">پاراستن</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-area -->
+  </div><!-- /admin-wrap -->
+</div><!-- /s-admin -->
+
+<div class="notif" id="notif"></div>
+
+<script src="firebase.js"></script>
+<script>
+// If firebase.js failed to load (wrong folder, wrong filename, offline,
+// or the two Firebase SDK <script> tags above it didn't load), every
+// button on this page would otherwise fail with a cryptic "fbGet is not
+// defined" — instead show one clear banner that says exactly what to check.
+if (typeof fbGet !== "function" || typeof rtdb === "undefined") {
+  document.write(
+    '<div style="position:fixed;inset:0;z-index:99999;background:#07080f;color:#fff;' +
+    'display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;' +
+    'font-family:sans-serif;direction:rtl">' +
+    '<div style="max-width:480px;background:rgba(230,57,70,.12);border:2px solid #e63946;' +
+    'border-radius:16px;padding:28px">' +
+    '<div style="font-size:2.2rem;margin-bottom:10px">⚠️</div>' +
+    '<div style="font-size:1.1rem;font-weight:800;color:#ff9a9a;margin-bottom:12px">firebase.js بار نەبووە</div>' +
+    '<div style="font-size:.9rem;color:#ddd;line-height:1.9;text-align:right">' +
+    '١. دڵنیابەرەوە فایلی <b>firebase.js</b> لە هەمان فۆڵدەری ئەم پەڕەیەدایە (هەمان ناو، بێ "(1)" یان "(2)")<br>' +
+    '٢. ئینتەرنێتت پەیوەستە؟ (پێویستە بۆ بارکردنی Firebase SDK)<br>' +
+    '٣. باشترین ڕێگا: فایلەکان لەسەر ماڵپەڕێکی ڕاستەقینە (وەک GitHub Pages) باربکە، نەک بە کرتەکردنی دووانی لەسەر دیسک' +
+    '</div></div></div>'
+  );
+  throw new Error("firebase.js not loaded — halting the rest of the script so nothing fails silently.");
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN AUTH
+// ═══════════════════════════════════════════════
+const ADMIN_PW = "112233";
+
+function adminLogin(){
+  const pw=document.getElementById("aPw").value;
+  if(pw===ADMIN_PW){
+    sessionStorage.setItem("adminAuth","1");
+    document.getElementById("s-login").classList.remove("active");
+    document.getElementById("s-admin").classList.add("active");
+    loadOverview(); loadUsers(); loadQuestions(); loadBracket();
+    listenState();
+    notif("بەخێربێیتەوە ئەدمین ✓","suc");
+  } else notif("وشەی نهێنی هەڵەیە","err");
+}
+function adminLogout(){
+  sessionStorage.removeItem("adminAuth");
+  location.reload();
+}
+
+// ═══════════════════════════════════════════════
+//  PANELS
+// ═══════════════════════════════════════════════
+function showPanel(id){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  event.target.classList.add("active");
+}
+function notif(msg,type){
+  const el=document.getElementById("notif");
+  el.textContent=msg;el.className="notif "+(type||"inf")+" show";
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("show"),3200);
+}
+
+// ═══════════════════════════════════════════════
+//  OVERVIEW
+// ═══════════════════════════════════════════════
+async function loadOverview(){
+  try{
+    const [users,qs,state,online]=await Promise.all([
+      fbGet("/users"),fbGet("/tournament_questions"),
+      fbGet("/tournament/state"),
+      new Promise(r=>rtdb.ref("presence").once("value",s=>r(Object.keys(s.val()||{}).length)))
+    ]);
+    document.getElementById("ovUsers").textContent=Object.keys(users||{}).length;
+    document.getElementById("ovOnline").textContent=online;
+    let qcount=0;
+    if(qs)Object.values(qs).forEach(r=>Object.values(r).forEach(a=>{qcount+=(Array.isArray(a)?a:Object.values(a||{})).length;}));
+    document.getElementById("ovQuestions").textContent=qcount;
+    document.getElementById("ovState").textContent=state||"idle";
+    // Live log
+    const lobby=await fbGet("/tournament/lobby");
+    const log=[];
+    log.push("حاڵەتی تۆرنمێنت: "+(state||"idle"));
+    log.push("ژووری یاری: "+(Object.keys(lobby||{}).length)+" یاریزان");
+    log.push("ئۆنلاین: "+online);
+    document.getElementById("ovLog").innerHTML=log.map(l=>"• "+l).join("<br>");
+  }catch(e){notif("هەڵە: "+e.message,"err");}
+}
+
+function listenState(){
+  rtdb.ref("tournament/state").on("value",s=>{
+    document.getElementById("ovState").textContent=s.val()||"idle";
+    document.getElementById("tState").textContent=s.val()||"idle";
+  });
+  rtdb.ref("tournament/lobby").on("value",s=>{
+    const n=Object.keys(s.val()||{}).length;
+    document.getElementById("tLobby").textContent=n+" / ٣٢ یاریزان";
+  });
+  rtdb.ref("presence").on("value",s=>{
+    document.getElementById("ovOnline").textContent=Object.keys(s.val()||{}).length;
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  USERS
+// ═══════════════════════════════════════════════
+let _allUsers=[];
+async function loadUsers(){
+  try{
+    const u=await fbGet("/users");
+    _allUsers=Object.entries(u||{}).map(([phone,d])=>({phone,...d}));
+    renderUsers(_allUsers);
+  }catch(e){notif("هەڵە","err");}
+}
+function renderUsers(list){
+  const tb=document.getElementById("userTbody");
+  if(!list.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">کەسی نییە</td></tr>';return;}
+  tb.innerHTML=list.map(u=>`<tr>
+    <td><strong>${u.username||"—"}</strong></td>
+    <td style="direction:ltr;text-align:right">${u.phone||"—"}</td>
+    <td>🏆 ${u.trophies||0}</td>
+    <td>${u.gamesPlayed||0}</td>
+    <td>${u.wins||0}</td>
+    <td><button class="btn btn-red btn-sm" onclick="banUser('${u.phone}')">بان</button></td>
+  </tr>`).join("");
+}
+function filterUsers(){
+  const q=document.getElementById("userSearch").value.toLowerCase();
+  renderUsers(_allUsers.filter(u=>(u.username||"").toLowerCase().includes(q)||(u.phone||"").includes(q)));
+}
+async function banUser(phone){
+  if(!confirm("دڵنیایت لە بانکردنی ئەم بەکارهێنەرە؟"))return;
+  try{
+    await fbDelete("/users/"+phone);
+    notif("بەکارهێنەر بانکرا ✓","suc");loadUsers();
+  }catch(e){notif("هەڵە","err");}
+}
+
+// ═══════════════════════════════════════════════
+//  QUESTIONS
+// ═══════════════════════════════════════════════
+let _qCr=-1;
+function pickQCr(idx){
+  _qCr=idx;
+  for(let i=0;i<4;i++) document.getElementById("qcr"+i).classList.toggle("on",i===idx);
+}
+async function addQuestion(){
+  const round=document.getElementById("qRound").value;
+  const question=document.getElementById("qText").value.trim();
+  const answers=["qa0","qa1","qa2","qa3"].map(id=>document.getElementById(id).value.trim());
+  const timeSeconds=parseInt(document.getElementById("qTime").value)||19;
+  if(!question){notif("پرسیار بنووسە","err");return;}
+  if(!answers[0]||!answers[1]){notif("لانیکەم A و B پێویستن","err");return;}
+  if(_qCr<0){notif("وەڵامی ڕاست دیاری بکە","err");return;}
+  if(!answers[_qCr]){notif("وەڵامی ڕاستەکەت بەتاڵە","err");return;}
+  try{
+    const existing=await fbGet("/tournament_questions/"+round)||{};
+    const arr=Array.isArray(existing)?existing:Object.values(existing).filter(Boolean);
+    const id="q_"+Date.now();
+    arr.push({id,question,answers,correct:_qCr,timeSeconds});
+    await fbPut("/tournament_questions/"+round,arr);
+    // Clear form
+    document.getElementById("qText").value="";
+    ["qa0","qa1","qa2","qa3"].forEach(id=>document.getElementById(id).value="");
+    for(let i=0;i<4;i++) document.getElementById("qcr"+i).classList.remove("on");
+    _qCr=-1;
+    notif("✅ پرسیار پارازرا","suc");
+    loadQuestions();
+  }catch(e){notif("هەڵە: "+e.message,"err");}
+}
+async function loadQuestions(){
+  const round=document.getElementById("qRoundFilter").value;
+  try{
+    const data=await fbGet("/tournament_questions/"+round);
+    const qs=data?Array.isArray(data)?data:Object.values(data).filter(Boolean):[];
+    const list=document.getElementById("qList");
+    if(!qs.length){list.innerHTML='<div style="color:var(--muted);font-size:.84rem;padding:12px 0">هێچ پرسیارێک نەپارازراوە بۆ ئەم دەوری</div>';return;}
+    list.innerHTML=qs.map((q,i)=>`
+      <div class="qrow">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;margin-bottom:3px">${q.question}</div>
+          <div style="font-size:.72rem;color:var(--muted)">
+            وەڵامی ڕاست: ${["A","B","C","D"][q.correct]} — ${q.answers[q.correct]||""}
+            &nbsp;|&nbsp; ${q.timeSeconds||19} چرکە
+          </div>
+        </div>
+        <button class="qdel" onclick="deleteQuestion('${round}',${i})">🗑</button>
+      </div>`).join("");
+  }catch(e){}
+}
+async function deleteQuestion(round,idx){
+  if(!confirm("دڵنیایت؟"))return;
+  try{
+    const data=await fbGet("/tournament_questions/"+round);
+    const qs=Array.isArray(data)?[...data]:Object.values(data||{}).filter(Boolean);
+    qs.splice(idx,1);
+    await fbPut("/tournament_questions/"+round,qs.length?qs:null);
+    notif("سڕایەوە ✓","suc");loadQuestions();
+  }catch(e){notif("هەڵە","err");}
+}
+
+// ═══════════════════════════════════════════════
+//  TOURNAMENT CONTROLS
+// ═══════════════════════════════════════════════
+async function openLobbyNow(){
+  // FIX: previously this only nulled a few individual fields, which left
+  // behind leftover per-round lock keys from any earlier game
+  // (advancing_32, activated_16, etc. — used internally by the site to
+  // make sure only one browser tab activates/advances a round at a time).
+  // Those stale keys would then silently block the NEXT game from ever
+  // finishing. Replacing the whole /tournament node guarantees a clean
+  // slate every time the lobby opens.
+  await fbPut("/tournament", { state: "lobby_open" });
+  notif("✅ ژووری یاری کراوەیە — یاریزانان دەتوانن بچنە ناو","suc");
+  loadOverview();
+}
+
+async function forceStartBracket(){
+  if(!confirm("یاری ئێستا دەستپێدەکات — دڵنیایت؟"))return;
+  notif("⏳ بڕاکەتی یاری دروست دەکرێت...","inf");
+  try{
+    // Import generateBracket logic inline
+    const lobSnap=await fbGet("/tournament/lobby");
+    let players=Object.values(lobSnap||{}).map(p=>({phone:p.phone,username:p.username,isBot:false}));
+    for(let i=players.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[players[i],players[j]]=[players[j],players[i]];}
+    players=players.slice(0,32);
+    let bn=0;
+    while(players.length<32){bn++;players.push({phone:"bot_"+Date.now()+"_"+bn,username:"🤖 بۆت "+bn,isBot:true});}
+    const matches={};
+    for(let i=0;i<16;i++){
+      matches["m"+i]={
+        players:[players[i*2],players[i*2+1]],
+        status:"waiting",question:null,qStartAt:null,
+        answers:{},winnerPhone:null,resolvedAt:null
+      };
+    }
+    await fbPut("/tournament/state","round_32");
+    await fbPut("/tournament/currentRound","32");
+    await fbPut("/tournament/champion",null);
+    await fbPut("/tournament/matches/round_32",matches);
+    await fbPut("/tournament/lobby",null);
+    // FIX: this field was missing entirely. index.html's self-healing
+    // watchdog reads roundRevealAt to know exactly when the "10 seconds
+    // until questions start" window is over — without it, the round-32
+    // matches would sit at "waiting" forever and the game would never
+    // actually begin (this was the "doesn't start a new game" bug).
+    await fbPut("/tournament/roundRevealAt", firebase.database.ServerValue.TIMESTAMP);
+    notif("✅ یاری دەستیپێکرد — دەوری ٣٢","suc");
+    loadBracket();
+  }catch(e){notif("هەڵە: "+e.message,"err");}
+}
+
+async function forceEndGame(){
+  if(!confirm("دڵنیایت لە کۆتایی پێهێنانی یاری?"))return;
+  // FIX: same stale-lock-key issue as openLobbyNow() — replace the whole
+  // node instead of nulling individual fields, so a fresh game can always
+  // be started cleanly afterward (this was the "doesn't start a new game"
+  // / "game doesn't reach an end" bug — a leftover advancing_2 flag from
+  // a previous run could silently block the FINAL from ever resolving).
+  await fbPut("/tournament", { state: "idle" });
+  notif("یاری کۆتایی پێهات","suc");loadOverview();
+}
+
+// ═══════════════════════════════════════════════
+//  BRACKET VIEWER
+// ═══════════════════════════════════════════════
+async function loadBracket(){
+  const wrap=document.getElementById("bracketWrap");wrap.innerHTML="";
+  try{
+    const [state,matches]=await Promise.all([
+      fbGet("/tournament/state"),fbGet("/tournament/matches")
+    ]);
+    document.getElementById("tState").textContent=state||"idle";
+    if(!matches){wrap.innerHTML='<div style="color:var(--muted);font-size:.84rem">تۆرنمێنت هێشتا دەستپێنەکردووە</div>';return;}
+    const rounds=["round_32","round_16","round_8","round_4","round_2"];
+    rounds.forEach(rk=>{
+      const rMatches=matches[rk];if(!rMatches)return;
+      const col=document.createElement("div");col.className="bround";
+      col.innerHTML=`<div class="bround-title">${rk.replace("round_","دەوری ")}</div>`;
+      Object.entries(rMatches).forEach(([mid,m])=>{
+        const div=document.createElement("div");
+        div.className="bmatch"+(m.status==="live"?" live":m.status==="done"?" done":"");
+        const p=m.players||[];
+        const w=m.winnerPhone;
+        div.innerHTML=p.map(pl=>`
+          <div class="bplayer ${w?pl.phone===w?"winner":"loser":""}">
+            <span>${pl.username}</span>
+            ${w&&pl.phone===w?'<span>✅</span>':''}
+          </div>`).join("")+
+          `<div style="font-size:.65rem;color:var(--muted);margin-top:4px">${m.status}</div>`;
+        col.appendChild(div);
+      });
+      wrap.appendChild(col);
+    });
+  }catch(e){notif("هەڵە: "+e.message,"err");}
+}
+
+// ═══════════════════════════════════════════════
+//  ANNOUNCEMENTS
+// ═══════════════════════════════════════════════
+async function saveAnnouncement(){
+  const txt=document.getElementById("annText").value.trim();
+  if(!txt){notif("مەسەج بنووسە","err");return;}
+  await fbPut("/announcement",{text:txt,createdAt:Date.now()});
+  notif("مەسەج نێردرا ✓","suc");
+}
+async function clearAnnouncement(){
+  await fbPut("/announcement",null);
+  document.getElementById("annText").value="";
+  notif("مەسەج سڕایەوە ✓","suc");
+}
+async function saveSpecialNote(){
+  const txt=document.getElementById("specialNote").value.trim();
+  await fbPut("/specialNote",txt||null);
+  notif("تۆمارکرا ✓","suc");
+}
+
+// ═══════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════
+window.addEventListener("load",()=>{
+  if(sessionStorage.getItem("adminAuth")==="1"){
+    document.getElementById("s-login").classList.remove("active");
+    document.getElementById("s-admin").classList.add("active");
+    loadOverview();loadUsers();loadQuestions();loadBracket();listenState();
+  }
+});
+</script>
+</body>
+</html>
