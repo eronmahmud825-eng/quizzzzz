@@ -1036,9 +1036,16 @@ function cleanupTournamentListeners() {
 
 function refreshHomeTourneyUI() {
   const s = currentSession;
-  document.getElementById("joinRoomWrap").style.display = s ? "flex" : "none";
+  updateJoinRoomVisibility();
   if (homeTourneyListenerAttached) return;
   homeTourneyListenerAttached = true;
+  // Admin's dedicated open/close toggle for the waiting room — separate
+  // from the full tournament state, so admin can hide/show the join
+  // button without resetting or ending anything already in progress.
+  rtdb.ref("tournament/lobbyClosed").on("value", snap => {
+    lobbyClosedFlag = snap.val() === true;
+    updateJoinRoomVisibility();
+  });
   rtdb.ref("tournament/state").on("value", snap => {
     const state = snap.val() || "idle";
     liveTournamentState = state;
@@ -1086,7 +1093,18 @@ function refreshHomeTourneyUI() {
       btn.disabled = false; btn.textContent = "🔴  یاری ئێستا دەستیپێکردووە — سەیری فینال بکە";
       btn.onclick = watchFinalIfLive;
     }
+    updateJoinRoomVisibility();
   });
+}
+
+let lobbyClosedFlag = false;
+function updateJoinRoomVisibility() {
+  const s = currentSession;
+  const wrap = document.getElementById("joinRoomWrap");
+  // Hidden entirely when logged out, or when admin has explicitly closed
+  // the waiting room — shown again automatically the instant admin
+  // reopens it, no refresh needed (same live listener drives this).
+  wrap.style.display = (s && !lobbyClosedFlag) ? "flex" : "none";
 }
 
 async function watchFinalIfLive() {
@@ -1099,6 +1117,11 @@ async function watchFinalIfLive() {
 async function joinLobby() {
   const s = currentSession;
   if (!s) { go("s-login"); return; }
+  const closedSnap = await rtdb.ref("tournament/lobbyClosed").once("value");
+  if (closedSnap.val() === true) {
+    notif("ئەدمین ژووری چاوەڕوانی داخستووە — چاوەڕێی کردنەوە بکە", "inf");
+    return;
+  }
   const stateSnap = await rtdb.ref("tournament/state").once("value");
   const state = stateSnap.val() || "idle";
   if (state !== "idle" && state !== "lobby_open") {
@@ -1112,7 +1135,14 @@ async function joinLobby() {
     notif("ژووری ئەمشەو پڕە (٣٢ یاریزان) — تکایە شەوی داهاتوو هەوڵبدەرەوە 🙏", "err");
     return;
   }
-  await rtdb.ref("tournament/lobby/" + safeKey(s.phone)).set({ phone: s.phone, username: s.username, joinedAt: SRV_TS });
+  const lobbyRef = rtdb.ref("tournament/lobby/" + safeKey(s.phone));
+  await lobbyRef.set({ phone: s.phone, username: s.username, joinedAt: SRV_TS });
+  // FIX: if a player closes the tab / loses connection while sitting in
+  // the waiting room, their name used to stay listed forever (nothing
+  // ever removed it). onDisconnect() here means Firebase itself removes
+  // this entry automatically the moment their connection drops, no
+  // matter how it drops — closed tab, phone died, lost signal, etc.
+  lobbyRef.onDisconnect().remove();
   await rtdb.ref("tournament/state").transaction(cur => (!cur || cur === "idle") ? "lobby_open" : undefined);
   go("s-lobby");
   watchLobby();
@@ -1485,7 +1515,20 @@ async function submitMatchAnswer(round, matchId, choice) {
   const s = currentSession;
   await rtdb.ref("tournament/matches/round_" + round + "/" + matchId + "/answers/" + safeKey(s.phone))
     .set({ choice, at: serverNow() });
-  tryResolveMatch(round, matchId);
+  // FIX: this used to call tryResolveMatch() immediately after writing
+  // MY OWN answer, with no check on whether the opponent had answered
+  // yet. Since tryResolveMatch treats "no answer" the same as "wrong",
+  // whoever answered FIRST was instantly declared the winner — the
+  // second player never got a real chance to answer, even with plenty
+  // of time left on the clock. Now it only tries to resolve immediately
+  // if BOTH players have already answered; otherwise it just waits —
+  // either for the opponent to also answer (their own submit call will
+  // trigger this same check), or for the timer to run out (which is
+  // handled separately in renderMatchLive's countdown).
+  const snap = await rtdb.ref("tournament/matches/round_" + round + "/" + matchId).once("value");
+  const m = snap.val();
+  const bothAnswered = m && (m.players || []).every(p => (m.answers || {})[safeKey(p.phone)]);
+  if (bothAnswered) tryResolveMatch(round, matchId);
 }
 
 async function tryResolveMatch(round, matchId) {
