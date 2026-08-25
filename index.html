@@ -414,7 +414,12 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
     <h1 style="font-size:1.6rem">🥊 یاریزانەکەت</h1>
   </div>
   <div class="bracket-vs" id="revealVs"></div>
-  <div class="lobby-sub" id="revealCountdown">یاری لە ١٠ چرکەدا دەستپێدەکات...</div>
+  <div class="lobby-sub" id="revealCountdown">چاوەڕوانی دەستپێکردنی یاری لەلایەن ئەدمینەوە...</div>
+  <div id="revealDebug" style="margin-top:16px;font-family:monospace;font-size:.7rem;color:var(--muted);
+    direction:ltr;text-align:center;white-space:pre-wrap"></div>
+  <button class="btn btn-ghost" onclick="manualRetryReveal()" style="margin-top:18px;padding:9px 20px;font-size:.8rem">
+    🔄 دووبارە هەوڵبدەرەوە
+  </button>
 </div>
 
 <!-- LIVE MATCH -->
@@ -1338,9 +1343,15 @@ function watchOpponentPresence(round, matchId, oppPhone) {
 }
 
 function openMatch(round, matchId, m) {
-  if (myMatchPath === "round_" + round + "/" + matchId) return; // already watching this one
+  // FIX: myMatchPath was missing the "matches/" segment (it built
+  // "round_32/m0" instead of "matches/round_32/m0"). Every place that used
+  // this variable to build a Firebase reference was therefore watching a
+  // path that never had any data on it — the live listener below silently
+  // never fired, no matter what admin.html correctly wrote to the real
+  // path. This was the actual root cause of the frozen reveal screen.
+  if (myMatchPath === "matches/round_" + round + "/" + matchId) return; // already watching this one
   if (myMatchUnsub) myMatchUnsub();
-  myMatchPath = "round_" + round + "/" + matchId;
+  myMatchPath = "matches/round_" + round + "/" + matchId;
 
   const s = currentSession;
   const me  = m.players.find(p => p.phone === s.phone);
@@ -1384,8 +1395,10 @@ function openMatch(round, matchId, m) {
   const matchRef = rtdb.ref("tournament/" + myMatchPath);
   const handler = snap => {
     const mv = snap.val();
+    const dbg = document.getElementById("revealDebug");
+    if (dbg) dbg.textContent = "🔄 " + new Date().toLocaleTimeString() + " — status: " + (mv ? mv.status : "(no data)");
     if (!mv) return;
-    if (mv.status === "waiting") {
+    if (mv.status === "waiting" || mv.status === "activating") {
       go("s-reveal");
     } else if (mv.status === "live" || mv.status === "resolving") {
       renderMatchLive(round, matchId, mv);
@@ -1395,6 +1408,30 @@ function openMatch(round, matchId, m) {
   };
   matchRef.on("value", handler);
   myMatchUnsub = () => matchRef.off("value", handler);
+}
+
+// Manual escape hatch on the reveal screen: re-fetches the match's current
+// status directly (bypassing the live listener entirely) and renders
+// whatever it finds. If this button fixes it but the listener didn't, that
+// confirms the listener itself wasn't firing — useful either way.
+function manualRetryReveal() {
+  if (!myMatchPath) { notif("هیچ یارییەک چالاک نییە", "err"); return; }
+  const dbg = document.getElementById("revealDebug");
+  if (dbg) dbg.textContent = "⏳ پشکنین...";
+  rtdb.ref("tournament/" + myMatchPath).once("value", snap => {
+    const mv = snap.val();
+    if (dbg) dbg.textContent = "🔄 " + new Date().toLocaleTimeString() + " (دەستی) — status: " + (mv ? mv.status : "(no data)");
+    if (!mv) { notif("هیچ داتایەک نەدۆزرایەوە", "err"); return; }
+    const m2 = myMatchPath.match(/^matches\/round_(\w+)\/(\w+)$/);
+    const round = m2 ? m2[1] : null, matchId = m2 ? m2[2] : null;
+    if (mv.status === "live" || mv.status === "resolving") {
+      renderMatchLive(round, matchId, mv);
+    } else if (mv.status === "done") {
+      handleMatchDone(round, matchId, mv);
+    } else if (mv.status === "waiting" || mv.status === "activating") {
+      notif("هێشتا لە بەرچاوگرتندایە (" + mv.status + ") — ئەدمین پێویستە \"دەستپێکردنی پرسیارەکان\" بکات", "inf");
+    }
+  });
 }
 
 let matchAnswered = false;
