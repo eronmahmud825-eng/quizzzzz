@@ -399,7 +399,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 
 <!-- LOBBY -->
 <div id="s-lobby" class="screen">
-  <button class="bk" onclick="go('s-home')">← گەڕانەوە</button>
+  <button class="bk" onclick="leaveLobby()">← گەڕانەوە</button>
   <div class="logo" style="margin-bottom:6px">
     <h1 style="font-size:1.8rem">🎮 ژووری یاری</h1>
   </div>
@@ -1003,6 +1003,7 @@ const ROUND_SIZE = { "32":32, "16":16, "8":8, "4":4, "2":2 };
 let myMatchUnsub = null, myMatchPath = null, myMatchTimerI = null;
 let oppPresenceUnsub = null;
 let lobbyUnsub = null;
+let sawSelfInLobby = false; // guards against a false "kicked" redirect on the very first snapshot right after joining
 let tourneyStateUnsub = null;
 
 function todayStr() {
@@ -1149,6 +1150,28 @@ async function joinLobby() {
   watchForMyMatch();
 }
 
+// FIX: clicking "back" from the lobby used to only switch screens
+// (go('s-home')) — it never actually removed the player from Firebase.
+// onDisconnect() only fires on a genuine network disconnect (closed tab,
+// lost signal, killed app); it does NOT fire just from navigating to a
+// different screen within this same single-page app, since the
+// connection to Firebase stays open the whole time. That's why names
+// were staying in the waiting room forever after someone left on
+// purpose. This explicitly removes their entry the moment they leave.
+async function leaveLobby() {
+  const s = currentSession;
+  sawSelfInLobby = false;
+  if (s) {
+    try {
+      const lobbyRef = rtdb.ref("tournament/lobby/" + safeKey(s.phone));
+      lobbyRef.onDisconnect().cancel(); // no longer needed, we're removing it ourselves right now
+      await lobbyRef.remove();
+    } catch (e) {}
+  }
+  if (lobbyUnsub) { lobbyUnsub(); lobbyUnsub = null; }
+  go("s-home");
+}
+
 function watchLobby() {
   if (lobbyUnsub) lobbyUnsub();
   const ref = rtdb.ref("tournament/lobby");
@@ -1167,6 +1190,24 @@ function watchLobby() {
     document.getElementById("lobbySub").textContent = players.length >= 32
       ? "ژوورەکە پڕە! چاوەڕوانی کاتژمێر ٩ بکە..."
       : "چاوەڕوانی یاریزانانی تر... یاری لە کاتژمێر ٩ دەستپێدەکات (شوێنە بەتاڵەکان پڕ دەبنەوە بە بۆت)";
+
+    // FIX: if admin closes the waiting room while I'm already sitting in
+    // it, my entry gets removed server-side (see toggleLobbyClosed in
+    // admin.html) — but nothing used to notice that on my screen, so I'd
+    // just sit on the lobby screen forever with no idea I'd been kicked.
+    // If I'm on the lobby screen and my own name WAS in the list but no
+    // longer is, send me home with an explanation. (Guarded by
+    // sawSelfInLobby so the very first snapshot — before my own join
+    // write has visibly landed — can't falsely trigger this.)
+    if (s && document.getElementById("s-lobby").classList.contains("active")) {
+      const imIn = !!val[safeKey(s.phone)];
+      if (imIn) sawSelfInLobby = true;
+      else if (sawSelfInLobby) {
+        sawSelfInLobby = false;
+        notif("ئەدمین ژووری چاوەڕوانی داخست", "inf");
+        go("s-home");
+      }
+    }
   };
   ref.on("value", handler);
   lobbyUnsub = () => ref.off("value", handler);
