@@ -456,6 +456,11 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
     <div class="result-emoji">⏳</div>
     <div class="result-title" style="color:var(--gold)">چاوەڕوانی دەوری داهاتوو</div>
     <div class="result-sub" id="waitRoundSub">یاریزانانی تر هێشتا یاری دەکەن...</div>
+    <div id="waitRoundDebug" style="margin-top:16px;font-family:monospace;font-size:.68rem;color:var(--muted);
+      direction:ltr;text-align:left;white-space:pre-wrap;max-height:220px;overflow-y:auto"></div>
+    <button class="btn btn-ghost" onclick="manualCheckWaitRound()" style="margin-top:16px;padding:9px 20px;font-size:.8rem">
+      🔄 پشکنینی دەستی
+    </button>
   </div>
 </div>
 
@@ -1033,6 +1038,7 @@ function cleanupTournamentListeners() {
   if (specUnsub) { specUnsub(); specUnsub = null; }
   clearInterval(myMatchTimerI);
   clearInterval(window._revealRetryI);
+  clearInterval(waitRoundDiagI);
 }
 
 function refreshHomeTourneyUI() {
@@ -1664,7 +1670,70 @@ function handleMatchDone(round, matchId, mv) {
   setTimeout(() => {
     document.getElementById("waitRoundSub").textContent = "یاریزانانی تر هێشتا یاری دەکەن...";
     go("s-wait-round");
+    startWaitRoundDiagnostics(round);
   }, 2200);
+}
+
+// Runs only while the player is actually looking at the "waiting for next
+// round" screen. Shows exactly what's happening (which matches are still
+// live/waiting/done) so a freeze is visible instead of a mystery, AND
+// actively helps resolve/advance things itself as one more redundant
+// safety net on top of the global watchdogs.
+let waitRoundDiagI = null;
+function startWaitRoundDiagnostics(round) {
+  clearInterval(waitRoundDiagI);
+  const tick = async () => {
+    if (!document.getElementById("s-wait-round").classList.contains("active")) { clearInterval(waitRoundDiagI); return; }
+    try {
+      const t = await new Promise(res => rtdb.ref("tournament").once("value", s => res(s.val())));
+      const dbg = document.getElementById("waitRoundDebug");
+      if (!t) { if (dbg) dbg.textContent = "(no tournament data)"; return; }
+      if (t.currentRound !== round) {
+        // The round actually moved on — this player just hasn't been
+        // routed into their next match yet. Nudge watchForMyMatch to
+        // re-check right now instead of waiting for its own listener.
+        if (dbg) dbg.textContent = "دەوری " + round + " تەواو بوو، دەورێکی نوێ (" + t.currentRound + ") دەستپێکردووە — گواستنەوە...";
+        watchForMyMatch();
+        return;
+      }
+      const matches = (t.matches && t.matches["round_" + round]) || {};
+      const lines = ["دەوری " + round + " — " + new Date().toLocaleTimeString() + ":"];
+      let liveCount = 0, doneCount = 0, waitingCount = 0;
+      for (const [mid, m] of Object.entries(matches)) {
+        lines.push("  " + mid + ": " + m.status + " (" + (m.players||[]).map(p=>p.username).join(" vs ") + ")");
+        if (m.status === "live") liveCount++;
+        else if (m.status === "done") doneCount++;
+        else if (m.status === "waiting") waitingCount++;
+        // Extra redundant safety net, driven from the waiting screen too.
+        if (m.status === "live" && m.qStartAt && m.question) {
+          const elapsed = (serverNow() - m.qStartAt) / 1000;
+          if (elapsed >= (m.question.timeSeconds + 2)) tryResolveMatch(round, mid);
+          m.players.forEach(p => {
+            if (p.isBot && !((m.answers || {})[safeKey(p.phone)])) scheduleBotAnswers(round, mid, m, m.question.timeSeconds);
+          });
+        } else if (m.status === "waiting") {
+          // Shouldn't normally happen once round activates, but just in
+          // case some matches never got picked up at all — try again.
+          activateRoundMatches(round);
+        }
+      }
+      lines.push(doneCount + " تەواو، " + liveCount + " چالاک، " + waitingCount + " چاوەڕوان");
+      if (dbg) dbg.textContent = lines.join("\n");
+      if (doneCount === Object.keys(matches).length && Object.keys(matches).length > 0) {
+        maybeAdvanceRound(round);
+      }
+    } catch (e) { console.warn("wait-round diagnostics error:", e); }
+  };
+  tick();
+  waitRoundDiagI = setInterval(tick, 2000);
+}
+
+function manualCheckWaitRound() {
+  const dbg = document.getElementById("waitRoundDebug");
+  if (dbg) dbg.textContent = "⏳ پشکنین...";
+  const round = liveTournamentState && liveTournamentState.startsWith("round_") ? liveTournamentState.replace("round_","") : null;
+  watchForMyMatch();
+  if (round) startWaitRoundDiagnostics(round);
 }
 
 // ── ROUND ADVANCE (claimed via transaction so only one client does it) ──
