@@ -1350,7 +1350,17 @@ function scheduleBotAnswers(round, matchId, m, timeSeconds) {
       const correctIdx = qv ? qv.correct : 0;
       const botAnswer = Math.random() < 0.6 ? correctIdx : Math.floor(Math.random() * (mv.question.answers || []).length);
       await ansRef.set({ choice: botAnswer, at: serverNow() });
-      tryResolveMatch(round, matchId);
+      // FIX: same bug as the real-player path had — this used to call
+      // tryResolveMatch() right after just THIS bot answered, without
+      // checking the other player. In a bot-vs-bot match, whichever bot's
+      // random delay happened to be shorter would resolve the match
+      // instantly, and the other bot's own still-pending timer would
+      // then try to answer an already-finished match. Only resolve once
+      // every player in the match actually has an answer.
+      const freshSnap = await rtdb.ref("tournament/matches/round_" + round + "/" + matchId).once("value");
+      const freshM = freshSnap.val();
+      const allAnswered = freshM && (freshM.players || []).every(pl => (freshM.answers || {})[safeKey(pl.phone)]);
+      if (allAnswered) tryResolveMatch(round, matchId);
     }, delay);
   });
 }
@@ -1710,13 +1720,30 @@ async function maybeAdvanceRound(round) {
 //  as ANY single player (or the admin panel) has the page open
 //  anywhere, the tournament keeps moving.
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  SELF-HEALING WATCHDOG — runs on every connected tab, every 2s.
+//  This is what actually fixes the "says 10 seconds then nothing
+//  happens" bug: instead of trusting one browser tab's setTimeout to
+//  survive, every open tab independently checks Firebase's server
+//  clock and nudges the game forward if something is overdue. As long
+//  as ANY single player (or the admin panel) has the page open
+//  anywhere, the tournament keeps moving.
+//
+//  This now also serves as the fallback for admin's manual "▶️
+//  دەستپێکردنی پرسیارەکان" button: if admin clicks it, that wins
+//  instantly (transaction claims resolve in milliseconds). But if
+//  nobody clicks — admin.html isn't open, or a solo bot-test round has
+//  a mix of real player + bots and doesn't auto-cascade — this fires
+//  automatically after a grace period so the game never gets
+//  permanently stuck waiting for a click that isn't coming.
+// ═══════════════════════════════════════════════════════
 async function checkRoundActivation() {
   try {
     const snap = await rtdb.ref("tournament").once("value");
     const t = snap.val();
     if (!t || !t.currentRound || !t.roundRevealAt || t.state === "finished") return;
     const elapsed = serverNow() - t.roundRevealAt;
-    if (elapsed < 10000) return;
+    if (elapsed < 20000) return; // 20s grace period — gives admin room to click manually first
     const lockRes = await rtdb.ref("tournament/activated_" + t.currentRound).transaction(cur => cur ? undefined : true);
     if (!lockRes.committed) return; // some other tab already handled this round's activation
     activateRoundMatches(t.currentRound);
