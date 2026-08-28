@@ -1300,54 +1300,80 @@ async function activateRoundMatches(round) {
   const qSnap = await rtdb.ref("tournament_questions/" + round).once("value");
   const qData = qSnap.val() || {};
   const qIds = Object.keys(qData);
+
+  // IMPORTANT: Bot matches do not need a browser/player to activate them.
+  // Every bot-vs-bot match is completed automatically. A match containing
+  // the real player becomes LIVE so the real player can play it.
   for (const matchId of Object.keys(matches)) {
     const m = matches[matchId];
-    if (m.status !== "waiting") continue;
-    // Per-match transaction claim: if two tabs both notice this match is
-    // ready to activate at the same moment, only one of them wins here.
-    const claim = await roundRef.child(matchId + "/status").transaction(cur => cur === "waiting" ? "activating" : undefined);
+    if (!m || m.status !== "waiting") continue;
+
+    const players = m.players || [];
+    if (players.length !== 2) continue;
+
+    const bothBots = players[0].isBot === true && players[1].isBot === true;
+
+    if (bothBots) {
+      // Atomic claim. Only one browser may finish this bot match.
+      const claim = await roundRef.child(matchId + "/status")
+        .transaction(cur => cur === "waiting" ? "resolving" : undefined);
+      if (!claim.committed) continue;
+
+      const winner = Math.random() < 0.5 ? players[0] : players[1];
+      await roundRef.child(matchId).update({
+        status: "done",
+        winnerPhone: winner.phone,
+        correct: null,
+        resolvedAt: SRV_TS,
+        botSimulation: true
+      });
+      continue;
+    }
+
+    // Human-vs-bot or human-vs-human: start the real question normally.
+    if (!qIds.length) {
+      const claim = await roundRef.child(matchId + "/status")
+        .transaction(cur => cur === "waiting" ? "resolving" : undefined);
+      if (!claim.committed) continue;
+      const winner = players[Math.floor(Math.random() * 2)];
+      await roundRef.child(matchId).update({
+        status: "done", winnerPhone: winner.phone, resolvedAt: SRV_TS,
+        correct: null, botSimulation: true
+      });
+      continue;
+    }
+
+    const claim = await roundRef.child(matchId + "/status")
+      .transaction(cur => cur === "waiting" ? "activating" : undefined);
     if (!claim.committed) continue;
+
     try {
-      // BOT-TEST FIX: when both sides are bots there is no real player
-      // who needs to see/answer a question. Resolve the simulated match
-      // immediately so a bot-heavy Round 32/16 can NEVER remain frozen
-      // on "waiting" just because no browser tab is attached to that
-      // particular match.
-      const bothBots = (m.players || []).length === 2 && m.players.every(p => p.isBot);
-      if (bothBots) {
-        await resolveNoQuestion(round, matchId, m);
-        continue;
-      }
-      if (!qIds.length) {
-        await resolveNoQuestion(round, matchId, m);
-        continue;
-      }
       const qId = qIds[Math.floor(Math.random() * qIds.length)];
       const q = qData[qId];
       await roundRef.child(matchId).update({
-        status: "live", qStartAt: SRV_TS,
-        question: { qId, question: q.question, answers: q.answers, timeSeconds: q.timeSeconds || 19 }
+        status: "live",
+        qStartAt: SRV_TS,
+        question: {
+          qId,
+          question: q.question,
+          answers: q.answers,
+          timeSeconds: q.timeSeconds || 19
+        }
       });
-      scheduleBotAnswers(round, matchId, m, q.timeSeconds || 19);
+      scheduleBotAnswers(round, matchId, {
+        ...m,
+        status: "live",
+        question: { qId, ...q, timeSeconds: q.timeSeconds || 19 }
+      }, q.timeSeconds || 19);
     } catch (e) {
-      // If anything above fails partway through, this match is left
-      // sitting at "activating" — a state neither the watchdog nor the
-      // per-player retry recognize as something to retry (they both only
-      // look for "waiting"), which would strand it forever, silently.
-      // Reverting it back to "waiting" here means the very next watchdog
-      // tick or player retry will simply try again cleanly.
       console.warn("activateRoundMatches failed for", matchId, e);
-      try { await roundRef.child(matchId + "/status").set("waiting"); } catch (e2) {}
+      try { await roundRef.child(matchId + "/status").set("waiting"); } catch (_) {}
     }
   }
-}
 
-async function resolveNoQuestion(round, matchId, m) {
-  const winner = Math.random() < 0.5 ? m.players[0] : m.players[1];
-  await rtdb.ref("tournament/matches/round_" + round + "/" + matchId).update({
-    status: "done", winnerPhone: winner.phone, resolvedAt: SRV_TS
-  });
-  maybeAdvanceRound(round);
+  // The bot matches above may have completed the whole round. Advance now,
+  // in the same call, so there is no dependency on a player's browser.
+  await maybeAdvanceRound(round);
 }
 
 function scheduleBotAnswers(round, matchId, m, timeSeconds) {
@@ -1752,17 +1778,24 @@ async function maybeAdvanceRound(round) {
   const snap = await roundRef.once("value");
   const matches = snap.val() || {};
   const ids = Object.keys(matches);
-  const allDone = ids.length > 0 && ids.every(id => matches[id].status === "done");
-  if (!allDone) return;
+  if (!ids.length || !ids.every(id => matches[id] && matches[id].status === "done")) return;
 
-  const lockRes = await rtdb.ref("tournament/advancing_" + round).transaction(cur => cur ? undefined : true);
-  if (!lockRes.committed) return; // another client already advancing this round
+  // Only one connected browser is allowed to create the next round.
+  const lockRes = await rtdb.ref("tournament/advancing_" + round)
+    .transaction(cur => cur ? undefined : true);
+  if (!lockRes.committed) return;
 
-  const winners = ids.map(id => matches[id]).map(m => m.players.find(p => p.phone === m.winnerPhone));
+  let winners = ids
+    .map(id => matches[id].players && matches[id].players.find(p => p.phone === matches[id].winnerPhone))
+    .filter(Boolean);
 
   if (round === "2") {
     const champion = winners[0];
-    await rtdb.ref("tournament").update({ state: "finished", champion: { phone: champion.phone, username: champion.username } });
+    if (!champion) return;
+    await rtdb.ref("tournament").update({
+      state: "finished",
+      champion: { phone: champion.phone, username: champion.username }
+    });
     await rtdb.ref("tournament_history/" + todayStr()).set({
       champion: { phone: champion.phone, username: champion.username }, finishedAt: SRV_TS
     });
@@ -1770,24 +1803,42 @@ async function maybeAdvanceRound(round) {
       try {
         const user = await fbGet("/users/" + champion.phone);
         if (user) await fbPut("/users/" + champion.phone, { ...user, trophies: (user.trophies || 0) + 1 });
-      } catch (e) {}
+      } catch (_) {}
     }
     return;
   }
 
   const nextRound = ROUND_SEQUENCE[ROUND_SEQUENCE.indexOf(round) + 1];
+  if (!nextRound || winners.length < 2) return;
+
+  // RANDOM 1v1 PAIRING for every new round.
+  // This is intentional for bot testing: after Round 32 finishes, the
+  // winners are shuffled and paired randomly into Round 16, then 8, 4, 2.
+  winners = winners.sort(() => Math.random() - 0.5);
+
   const nextMatches = {};
-  for (let i = 0; i < winners.length / 2; i++) {
-    nextMatches["m" + i] = {
-      players: [winners[i*2], winners[i*2+1]],
-      status: "waiting", question: null, qStartAt: null, answers: {}, winnerPhone: null, resolvedAt: null
+  for (let i = 0; i + 1 < winners.length; i += 2) {
+    nextMatches["m" + (i / 2)] = {
+      players: [winners[i], winners[i + 1]],
+      status: "waiting",
+      question: null,
+      qStartAt: null,
+      answers: {},
+      winnerPhone: null,
+      resolvedAt: null
     };
   }
+
   await rtdb.ref("tournament").update({
-    state: "round_" + nextRound, currentRound: nextRound, roundRevealAt: SRV_TS,
+    state: "round_" + nextRound,
+    currentRound: nextRound,
+    roundRevealAt: SRV_TS,
     ["matches/round_" + nextRound]: nextMatches
   });
-  // (No setTimeout here — see checkRoundActivation watchdog below.)
+
+  // CRITICAL: do not wait for a player to visit the new round.
+  // Start bot-vs-bot matches immediately and put any human match LIVE.
+  await activateRoundMatches(nextRound);
 }
 
 // ═══════════════════════════════════════════════════════
