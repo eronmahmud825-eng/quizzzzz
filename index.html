@@ -1966,6 +1966,97 @@ setInterval(checkRoundActivation, 2000);
 setInterval(watchdogTick, 3000);
 
 
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HARD BOT ENGINE — BOT MATCHES MUST NEVER DEPEND ON A BROWSER/TIMER
+// ═══════════════════════════════════════════════════════════════════════
+// A bot-vs-bot match is simulation data, not a real match. Therefore it is
+// safe to finish it directly whenever it is seen in WAITING state. This
+// listener is deliberately independent from roundRevealAt / activation locks.
+// It fixes the exact case where m0 is DONE while m1..m15 remain WAITING.
+let botEngineBusy = false;
+
+async function forceFinishWaitingBotMatches(round) {
+  if (botEngineBusy) return;
+  botEngineBusy = true;
+  try {
+    const ref = rtdb.ref("tournament/matches/round_" + round);
+    const snap = await ref.once("value");
+    const matches = snap.val() || {};
+
+    for (const [matchId, m] of Object.entries(matches)) {
+      if (!m || m.status !== "waiting") continue;
+      const ps = m.players || [];
+      if (ps.length !== 2 || !ps[0].isBot || !ps[1].isBot) continue;
+
+      // Claim THIS MATCH only. No round-level lock is used.
+      const claim = await ref.child(matchId + "/status").transaction(
+        cur => cur === "waiting" ? "resolving" : undefined
+      );
+      if (!claim.committed) continue;
+
+      const winner = Math.random() < 0.5 ? ps[0] : ps[1];
+      await ref.child(matchId).update({
+        status: "done",
+        winnerPhone: winner.phone,
+        correct: null,
+        resolvedAt: firebase.database.ServerValue.TIMESTAMP,
+        botSimulation: true
+      });
+    }
+
+    // If those bot matches completed the round, immediately create the next
+    // round and RANDOMLY pair its winners 1v1.
+    await maybeAdvanceRound(round);
+  } catch (e) {
+    console.warn("forceFinishWaitingBotMatches error:", e);
+  } finally {
+    botEngineBusy = false;
+  }
+}
+
+// Run immediately on every tournament state change — no 20 second wait.
+let botEngineUnsub = null;
+function startHardBotEngine() {
+  if (botEngineUnsub) botEngineUnsub();
+  const ref = rtdb.ref("tournament/currentRound");
+  const handler = snap => {
+    const round = snap.val();
+    if (round) forceFinishWaitingBotMatches(String(round));
+  };
+  ref.on("value", handler);
+  botEngineUnsub = () => ref.off("value", handler);
+
+  // Also watch the actual matches. This catches m1..m15 becoming WAITING
+  // after Round 32 is created, even if currentRound itself doesn't change.
+  const matchRef = rtdb.ref("tournament/matches");
+  const matchHandler = snap => {
+    const tRound = liveTournamentState && liveTournamentState.startsWith("round_")
+      ? liveTournamentState.replace("round_", "") : null;
+    if (tRound) forceFinishWaitingBotMatches(tRound);
+  };
+  matchRef.on("value", matchHandler);
+  const oldUnsub = botEngineUnsub;
+  botEngineUnsub = () => {
+    oldUnsub();
+    matchRef.off("value", matchHandler);
+  };
+}
+
+// Start the hard bot engine after Firebase/session initialization has created
+// rtdb. bootSession() is called at the bottom of this file, so a short retry
+// makes this independent of initialization order.
+(function bootHardBotEngine() {
+  let tries = 0;
+  const i = setInterval(() => {
+    tries++;
+    if (typeof rtdb !== "undefined" && rtdb) {
+      clearInterval(i);
+      startHardBotEngine();
+    } else if (tries > 100) clearInterval(i);
+  }, 100);
+})();
+
 // ── FINAL SPECTATE (anyone watching from the home page) ──
 let specUnsub = null;
 function startSpectate() {
