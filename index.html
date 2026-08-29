@@ -33,7 +33,25 @@ const rtdb = firebase.database();
 const SRV_TS = firebase.database.ServerValue.TIMESTAMP;
 
 let serverOffset = 0;
-rtdb.ref(".info/serverTimeOffset").on("value", snap => { serverOffset = snap.val() || 0; });
+let serverOffsetReady = false;
+let serverOffsetReadyResolve;
+const serverOffsetReadyPromise = new Promise(resolve => { serverOffsetReadyResolve = resolve; });
+rtdb.ref(".info/serverTimeOffset").on("value", snap => {
+  serverOffset = Number(snap.val()) || 0;
+  if (!serverOffsetReady) {
+    serverOffsetReady = true;
+    if (serverOffsetReadyResolve) serverOffsetReadyResolve();
+  }
+});
+async function syncServerClock() {
+  if (serverOffsetReady) return;
+  try {
+    const snap = await rtdb.ref(".info/serverTimeOffset").once("value");
+    serverOffset = Number(snap.val()) || 0;
+  } catch (_) {}
+  serverOffsetReady = true;
+  if (serverOffsetReadyResolve) serverOffsetReadyResolve();
+}
 function serverNow() { return Date.now() + serverOffset; }
 
 const FB = "https://quizgame2-cd4d5-default-rtdb.firebaseio.com";
@@ -350,6 +368,7 @@ button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:tr
 @media(max-width:700px){.screen{padding:82px 10px 32px;min-height:100dvh}.screen.top{padding-top:82px}.home-quickbar{top:10px;gap:6px;padding:6px 7px}.home-quickbar .circle-btn{width:43px;height:43px}.home-quick-label{display:none}.notif-panel{top:65px;right:10px}.logo h1{letter-spacing:3px;font-size:clamp(1.8rem,9vw,2.7rem)}.logo p{letter-spacing:3px;font-size:.68rem}.cd-card{padding:22px 12px;border-radius:18px}.cd-grid{gap:6px}.cd-unit{min-width:66px;padding:12px 4px}.cd-num{font-size:1.55rem}.btn{width:100%;padding:15px 20px;font-size:.96rem;min-height:50px}.tourney-home-card{margin-top:10px;border-radius:16px;padding:12px}.mini-bracket{grid-template-columns:repeat(4,142px);overflow-x:auto}.bracket-top{align-items:flex-start;flex-direction:column}.bracket-top-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.bracket-top-actions .btn{min-height:46px}.bracket-meta{gap:6px}.bracket-pill{font-size:.62rem;padding:7px 9px}.bracket-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.bracket-board{min-width:900px;gap:14px}.bracket-list{min-height:520px}.bracket-card{min-width:168px}.bracket-player{font-size:.68rem}.lobby-grid{grid-template-columns:repeat(2,1fr);gap:7px;width:100%}.lobby-chip{padding:10px 8px;font-size:.72rem}.match-hdr{gap:6px}.match-p{font-size:.78rem;padding:10px 5px}.match-q{padding:15px 12px;font-size:.95rem}.match-ab{padding:14px 10px;font-size:.84rem;min-height:54px}.card{padding:20px 15px;border-radius:17px}.dash-stat-grid{grid-template-columns:1fr 1fr;gap:8px}.dash-big-stat{padding:14px 8px}.dash-big-stat .value{font-size:1.45rem}.dash-summary{grid-template-columns:1fr}.dash-actions .btn{min-width:0;width:auto;flex:1}}
 @media(max-width:420px){.home-quickbar .circle-btn{width:41px;height:41px;font-size:.95rem}.home-quickbar{gap:4px}.cd-grid{display:grid!important;grid-template-columns:1fr 1fr}.cd-unit{max-width:none;min-width:0}.bracket-board{min-width:850px}.bracket-card{min-width:155px}.bracket-player{font-size:.64rem}.match-agrid{grid-template-columns:1fr}.dash-actions{display:grid;grid-template-columns:1fr}.dash-actions .btn{width:100%}}
 
+.match-q{user-select:none;-webkit-user-select:none}.match-timer .tn{font-variant-numeric:tabular-nums;min-width:2ch;text-align:center}.match-status{min-height:22px}
 </style>
 </head>
 <body>
@@ -399,24 +418,9 @@ button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:tr
     <button class="btn btn-ghost" onclick="go('s-register')">✨ &nbsp; خۆتۆمارکردن</button>
   </div>
 
-  <div id="homeUserBtns" style="display:none;width:100%;max-width:400px;">
-    <div class="mini-dash">
-      <div class="mini-dash-top">
-        <div class="mini-avatar">🎮</div>
-        <div>
-          <div class="mini-name" id="miniName">—</div>
-          <div class="mini-sub">بەخێربێیتەوە</div>
-        </div>
-      </div>
-      <div class="mini-stats">
-        <div class="mini-stat"><div class="mv" id="miniTrophies">0</div><div class="ml">🏆 مۆدال</div></div>
-        <div class="mini-stat"><div class="mv" id="miniGames">0</div><div class="ml">🎮 یاری</div></div>
-        <div class="mini-stat"><div class="mv" id="miniWins">0</div><div class="ml">✅ بردنەوە</div></div>
-      </div>
-    </div>
-    <div class="mwrap">
-      <button class="btn btn-gold" onclick="go('s-dashboard')">🏠 &nbsp; داشبۆرد و مێژووی تەواو</button>
-    </div>
+  <!-- The detailed dashboard is intentionally opened from the top circular profile button. -->
+  <div id="homeUserBtns" style="display:none" aria-hidden="true">
+    <span id="miniName">—</span><span id="miniTrophies">0</span><span id="miniGames">0</span><span id="miniWins">0</span>
   </div>
 
 
@@ -485,11 +489,7 @@ button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:tr
   </div>
   <div class="bracket-vs" id="revealVs"></div>
   <div class="lobby-sub" id="revealCountdown">چاوەڕوانی دەستپێکردنی یاری لەلایەن ئەدمینەوە...</div>
-  <div id="revealDebug" style="margin-top:16px;font-family:monospace;font-size:.7rem;color:var(--muted);
-    direction:ltr;text-align:center;white-space:pre-wrap"></div>
-  <button class="btn btn-ghost" onclick="manualRetryReveal()" style="margin-top:18px;padding:9px 20px;font-size:.8rem">
-    🔄 دووبارە هەوڵبدەرەوە
-  </button>
+  <div id="revealDebug" style="display:none"></div>
 </div>
 
 <!-- LIVE MATCH -->
@@ -526,11 +526,7 @@ button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:tr
     <div class="result-emoji">⏳</div>
     <div class="result-title" style="color:var(--gold)">چاوەڕوانی دەوری داهاتوو</div>
     <div class="result-sub" id="waitRoundSub">یاریزانانی تر هێشتا یاری دەکەن...</div>
-    <div id="waitRoundDebug" style="margin-top:16px;font-family:monospace;font-size:.68rem;color:var(--muted);
-      direction:ltr;text-align:left;white-space:pre-wrap;max-height:220px;overflow-y:auto"></div>
-    <button class="btn btn-ghost" onclick="manualCheckWaitRound()" style="margin-top:16px;padding:9px 20px;font-size:.8rem">
-      🔄 پشکنینی دەستی
-    </button>
+    <div id="waitRoundDebug" style="display:none"></div>
   </div>
 </div>
 
@@ -725,18 +721,15 @@ async function bootSession() {
 function applySessionUI() {
   const s = currentSession;
   document.getElementById("homeAuthBtns").style.display = s ? "none" : "flex";
-  document.getElementById("homeUserBtns").style.display = s ? "block" : "none";
+  // Detailed dashboard is opened only from the circular profile button.
+  document.getElementById("homeUserBtns").style.display = "none";
   document.getElementById("homeNote").textContent = s
     ? "چاوەڕێی کاتژمێر ٩ی شەو بکە — دەروازەی یاری بۆت دەکرێتەوە"
     : "یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.";
-  if (s) {
-    document.getElementById("miniName").textContent = s.username;
-    loadHomeMiniStats(s.phone);
-    initUserPresence(s.phone);
-  }
+  if (s) initUserPresence(s.phone);
   refreshHomeTourneyUI();
   updateQuickActionsUI();
-  watchForMyMatch(); // resumes an in-progress match automatically after a page refresh
+  resumeTournamentAfterRefresh();
   return s;
 }
 
@@ -1058,12 +1051,14 @@ tickCountdown(); setInterval(tickCountdown, 1000);
 //     backend; it's outside what a pure client-side file can guarantee.
 // ═══════════════════════════════════════════════════════
 const ROUND_SEQUENCE = ["32","16","8","4","2"];
+const MATCH_TIMER_SYNC_MS = 200; // every client derives remaining time from the same Firebase qStartAt
 const ROUND_SIZE = { "32":32, "16":16, "8":8, "4":4, "2":2 };
 let myMatchUnsub = null, myMatchPath = null, myMatchTimerI = null;
 let oppPresenceUnsub = null;
 let lobbyUnsub = null;
-let sawSelfInLobby = false; // guards against a false "kicked" redirect on the very first snapshot right after joining
+let sawSelfInLobby = false;
 let tourneyStateUnsub = null;
+const WAITING_ROOM_KEY = "quiz_waiting_room";
 
 function todayStr() {
   const d = new Date();
@@ -1204,6 +1199,50 @@ async function watchFinalIfLive() {
   notif("فینال هێشتا نەگەیشتووە — یاریزانەکان لە دەورە پێشووەکاندان", "inf");
 }
 
+// ── RESUME TOURNAMENT AFTER REFRESH / MOBILE RECONNECT ──
+// A refresh briefly triggers onDisconnect() for the lobby entry. We never
+// treat that brief removal as a kick. Instead we inspect the authoritative
+// tournament state and either restore the lobby entry or route directly to
+// the player's current match.
+async function resumeTournamentAfterRefresh() {
+  const s = currentSession;
+  if (!s) return;
+  try {
+    await syncServerClock();
+    const snap = await rtdb.ref("tournament").once("value");
+    const t = snap.val();
+    if (!t || !t.state) return;
+
+    const key = safeKey(s.phone);
+    if (String(t.state).startsWith("round_")) {
+      localStorage.removeItem(WAITING_ROOM_KEY);
+      // Wait until Firebase has the authoritative round/match data, then route.
+      watchForMyMatch();
+      return;
+    }
+
+    if (t.state === "lobby_open" && localStorage.getItem(WAITING_ROOM_KEY) === "1" && !t.lobbyClosed) {
+      const lobbyRef = rtdb.ref("tournament/lobby/" + key);
+      const existing = await lobbyRef.once("value");
+      if (!existing.exists()) {
+        await lobbyRef.set({ phone: s.phone, username: s.username, joinedAt: SRV_TS });
+      }
+      lobbyRef.onDisconnect().remove();
+      sawSelfInLobby = true;
+      if (activeScreenId() !== "s-lobby") { go("s-lobby"); watchLobby(); }
+      return;
+    }
+
+    if (t.state === "finished") {
+      localStorage.removeItem(WAITING_ROOM_KEY);
+    }
+  } catch (e) {
+    // A temporary network failure must never kick the player. The live
+    // Firebase listeners will retry routing on the next state update.
+    console.warn("resumeTournamentAfterRefresh", e);
+  }
+}
+
 // ── JOIN LOBBY (capped at 32, first-come-first-served) ──
 
 // ═══════════════════════════════════════════════════════
@@ -1319,6 +1358,7 @@ async function joinLobby() {
   }
   const lobbyRef = rtdb.ref("tournament/lobby/" + safeKey(s.phone));
   await lobbyRef.set({ phone: s.phone, username: s.username, joinedAt: SRV_TS });
+  localStorage.setItem(WAITING_ROOM_KEY, "1");
   recordTournamentParticipation(s.phone);
   // FIX: if a player closes the tab / loses connection while sitting in
   // the waiting room, their name used to stay listed forever (nothing
@@ -1344,6 +1384,7 @@ async function leaveLobby() {
   const s = currentSession;
   sawSelfInLobby = false;
   if (s) {
+    localStorage.removeItem(WAITING_ROOM_KEY);
     try {
       const stateSnap=await rtdb.ref("tournament/state").once("value"); const st=stateSnap.val()||"idle";
       if(st==="idle"||st==="lobby_open"){
@@ -1375,45 +1416,10 @@ function watchLobby() {
       ? "ژوورەکە پڕە! چاوەڕوانی کاتژمێر ٩ بکە..."
       : "چاوەڕوانی یاریزانانی تر... یاری لە کاتژمێر ٩ دەستپێدەکات (شوێنە بەتاڵەکان پڕ دەبنەوە بە بۆت)";
 
-    // FIX: if admin closes the waiting room while I'm already sitting in
-    // it, my entry gets removed server-side (see toggleLobbyClosed in
-    // admin.html) — but nothing used to notice that on my screen, so I'd
-    // just sit on the lobby screen forever with no idea I'd been kicked.
-    // If I'm on the lobby screen and my own name WAS in the list but no
-    // longer is, send me home with an explanation. (Guarded by
-    // sawSelfInLobby so the very first snapshot — before my own join
-    // write has visibly landed — can't falsely trigger this.)
-    if (s && document.getElementById("s-lobby").classList.contains("active")) {
-      const imIn = !!val[safeKey(s.phone)];
-      if (imIn) sawSelfInLobby = true;
-      else if (sawSelfInLobby) {
-        sawSelfInLobby = false;
-        // Do not trust the lobby snapshot alone: bracket generation clears
-        // /tournament/lobby at the same time it changes /tournament/state.
-        // Read the state directly so a fast snapshot can never falsely look
-        // like an admin kick.
-        rtdb.ref("tournament/state").once("value").then(stateSnap => {
-          const st = stateSnap.val() || "idle";
-          liveTournamentState = st;
-          if (st.startsWith("round_")) {
-            watchForMyMatch();
-            return;
-          }
-          if (st === "finished") {
-            go("s-home");
-            return;
-          }
-          if (st === "idle" || st === "lobby_open") {
-            notif(lobbyClosedFlag ? "ژووری چاوەڕوانی داخراوە" : "لە ژوورەکە دەرچوویت", "inf");
-            go("s-home");
-          }
-        }).catch(() => {
-          // On a transient read failure, never kick the player. Keep the
-          // lobby screen until the next Firebase state event.
-          sawSelfInLobby = true;
-        });
-      }
-    }
+    // IMPORTANT: a lobby entry disappearing is NOT a kick. On refresh,
+    // Firebase can remove the old onDisconnect entry for a moment. The
+    // authoritative tournament state below decides where the player goes.
+    if (s) sawSelfInLobby = !!val[safeKey(s.phone)];
   };
   ref.on("value", handler);
   lobbyUnsub = () => ref.off("value", handler);
@@ -1548,6 +1554,9 @@ async function activateRoundMatches(round) {
     if (!claim.committed) continue;
 
     try {
+      // The transaction above is the single authority for this match. Only
+      // this winner of the claim chooses the question, so both players always
+      // read exactly the same question object and exactly the same qStartAt.
       const qId = qIds[Math.floor(Math.random() * qIds.length)];
       const q = qData[qId];
       await roundRef.child(matchId).update({
@@ -1613,6 +1622,7 @@ function watchForMyMatch() {
   if (tourneyStateUnsub) tourneyStateUnsub();
   const ref = rtdb.ref("tournament/currentRound");
   const handler = async snap => {
+    await syncServerClock();
     const round = snap.val();
     if (!round) return;
     const matchesSnap = await rtdb.ref("tournament/matches/round_" + round).once("value");
@@ -1620,6 +1630,7 @@ function watchForMyMatch() {
     for (const [matchId, m] of Object.entries(matches)) {
       const inMatch = m.players.some(p => p.phone === s.phone);
       if (inMatch) {
+        localStorage.removeItem(WAITING_ROOM_KEY);
         if (m.status === "done") continue; // already resolved, handled elsewhere
         openMatch(round, matchId, m);
         return;
@@ -1688,29 +1699,14 @@ function openMatch(round, matchId, m) {
   if (!opp.isBot) watchOpponentPresence(round, matchId, opp.phone);
   else if (oppPresenceUnsub) { oppPresenceUnsub(); oppPresenceUnsub = null; }
 
-  if (m.status === "waiting") {
+  if (m.status === "waiting" || m.status === "activating") {
     document.getElementById("revealVs").innerHTML =
       `<div class="bvs-p me">${me.username}<br><span style="font-size:.7rem;color:var(--muted)">تۆ</span></div>
        <div class="bvs-x">VS</div>
        <div class="bvs-p">${opp.username}</div>`;
     go("s-reveal");
-    // Defense-in-depth: the shared 2s watchdog (checkRoundActivation) is
-    // what normally flips "waiting" -> "live" for everyone at once. As a
-    // backup, this player's own device also nudges things forward every
-    // 5s on its own, starting almost immediately — and keeps retrying
-    // (not just once) until the match actually moves on, in case a
-    // single attempt fails for a transient reason (network hiccup, etc).
-    // activateRoundMatches() is transaction-guarded per match, so calling
-    // it redundantly from many places is always safe — first one wins.
     clearInterval(window._revealRetryI);
-    window._revealRetryI = setInterval(() => {
-      rtdb.ref("tournament/" + myMatchPath + "/status").once("value", s2 => {
-        const st = s2.val();
-        if (st === "waiting") activateRoundMatches(round);
-        else if (st !== "activating") clearInterval(window._revealRetryI); // moved on — stop retrying
-      });
-    }, 5000);
-  } else if (m.status === "live") {
+  } else if (m.status === "live" || m.status === "resolving") {
     go("s-match");
     clearInterval(window._revealRetryI);
   }
@@ -1737,28 +1733,11 @@ function openMatch(round, matchId, m) {
 // status directly (bypassing the live listener entirely) and renders
 // whatever it finds. If this button fixes it but the listener didn't, that
 // confirms the listener itself wasn't firing — useful either way.
-function manualRetryReveal() {
-  if (!myMatchPath) { notif("هیچ یارییەک چالاک نییە", "err"); return; }
-  const dbg = document.getElementById("revealDebug");
-  if (dbg) dbg.textContent = "⏳ پشکنین...";
-  rtdb.ref("tournament/" + myMatchPath).once("value", snap => {
-    const mv = snap.val();
-    if (dbg) dbg.textContent = "🔄 " + new Date().toLocaleTimeString() + " (دەستی) — status: " + (mv ? mv.status : "(no data)");
-    if (!mv) { notif("هیچ داتایەک نەدۆزرایەوە", "err"); return; }
-    const m2 = myMatchPath.match(/^matches\/round_(\w+)\/(\w+)$/);
-    const round = m2 ? m2[1] : null, matchId = m2 ? m2[2] : null;
-    if (mv.status === "live" || mv.status === "resolving") {
-      renderMatchLive(round, matchId, mv);
-    } else if (mv.status === "done") {
-      handleMatchDone(round, matchId, mv);
-    } else if (mv.status === "waiting" || mv.status === "activating") {
-      notif("هێشتا لە بەرچاوگرتندایە (" + mv.status + ") — ئەدمین پێویستە \"دەستپێکردنی پرسیارەکان\" بکات", "inf");
-    }
-  });
-}
+function manualRetryReveal() {}
 
 let matchAnswered = false;
-function renderMatchLive(round, matchId, mv) {
+async function renderMatchLive(round, matchId, mv) {
+  await syncServerClock();
   go("s-match");
   const s = currentSession;
   const me  = mv.players.find(p => p.phone === s.phone);
@@ -1790,19 +1769,21 @@ function renderMatchLive(round, matchId, mv) {
   if (mv.status === "resolving") document.getElementById("matchStatus").textContent = "پێداچوونەوە بۆ ئەنجام...";
 
   clearInterval(myMatchTimerI);
-  const total = mv.question.timeSeconds;
-  myMatchTimerI = setInterval(() => {
-    const elapsed = (serverNow() - mv.qStartAt) / 1000;
+  const total = Number(mv.question.timeSeconds) || 19;
+  const renderClock = () => {
+    const elapsed = Math.max(0, (serverNow() - Number(mv.qStartAt || serverNow())) / 1000);
     const left = Math.max(0, Math.ceil(total - elapsed));
     document.getElementById("matchTNum").textContent = left;
-    document.getElementById("matchTFill").style.strokeDashoffset = 251.2 * (1 - left / total);
+    document.getElementById("matchTFill").style.strokeDashoffset = 251.2 * (1 - Math.min(1, elapsed / total));
     document.getElementById("matchTFill").style.stroke = left <= 5 ? "#e63946" : "var(--gold)";
     if(left<=3&&left>0&&countdownSoundAt!==(round+"/"+matchId+"/"+left)){countdownSoundAt=round+"/"+matchId+"/"+left;playSfx("tick")}
     if (left <= 0) {
       clearInterval(myMatchTimerI);
       tryResolveMatch(round, matchId);
     }
-  }, 250);
+  };
+  renderClock();
+  myMatchTimerI = setInterval(renderClock, MATCH_TIMER_SYNC_MS);
 }
 
 async function submitMatchAnswer(round, matchId, choice) {
@@ -1972,13 +1953,7 @@ function startWaitRoundDiagnostics(round) {
   waitRoundDiagI = setInterval(tick, 2000);
 }
 
-function manualCheckWaitRound() {
-  const dbg = document.getElementById("waitRoundDebug");
-  if (dbg) dbg.textContent = "⏳ پشکنین...";
-  const round = liveTournamentState && liveTournamentState.startsWith("round_") ? liveTournamentState.replace("round_","") : null;
-  watchForMyMatch();
-  if (round) startWaitRoundDiagnostics(round);
-}
+function manualCheckWaitRound() {}
 
 // ── ROUND ADVANCE (claimed via transaction so only one client does it) ──
 async function maybeAdvanceRound(round) {
@@ -2315,10 +2290,11 @@ function notif(msg, type) {
   clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 3000);
 }
 
-bootSession();
-setTimeout(() => {
-  try { refreshHomeTourneyUI(); updateTournamentHomePreview(); } catch(e) {}
-}, 300);
+(async function bootApp(){
+  try { await syncServerClock(); } catch (_) {}
+  await bootSession();
+  try { refreshHomeTourneyUI(); updateTournamentHomePreview(); resumeTournamentAfterRefresh(); } catch(e) {}
+})();
 </script>
 </body>
 </html>
