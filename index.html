@@ -337,9 +337,24 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .bracket-screen{width:100%;max-width:1500px;margin:0 auto;padding:10px 10px 30px}.bracket-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.bracket-title h1{margin:0;color:#fff;font-size:1.5rem}.bracket-title p{margin:4px 0 0;color:var(--muted);font-size:.75rem}.bracket-top-actions{display:flex;gap:8px}.bracket-scroll{overflow-x:auto;padding:6px 2px 14px}.bracket-board{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:28px;min-width:1040px;align-items:start}.bracket-col{display:flex;flex-direction:column}.bracket-col-title{text-align:center;color:#fff;font-weight:800;font-size:.82rem;margin-bottom:8px}.bracket-col-title small{display:block;color:var(--muted);font-size:.62rem;font-weight:500;margin-top:3px}.bracket-list{display:flex;flex-direction:column;justify-content:space-around;gap:9px;min-height:560px}.bracket-card{position:relative;background:linear-gradient(145deg,rgba(26,24,35,.98),rgba(12,13,25,.98));border:1px solid rgba(132,92,220,.38);border-radius:11px;padding:8px 9px;box-shadow:0 8px 25px rgba(0,0,0,.18)}.bracket-card.live{border-color:rgba(255,70,90,.8);box-shadow:0 0 16px rgba(255,70,90,.15)}.bracket-card.done{border-color:rgba(60,220,130,.35)}.bracket-card.waiting{border-color:rgba(240,180,41,.28)}.bracket-player{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:4px 2px;color:#eee;font-size:.72rem}.bracket-player.winner{color:#65e69b;font-weight:800}.bracket-player .bp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bp-score{font-family:'Oxanium',sans-serif;font-weight:800;color:var(--gold)}.bracket-status{text-align:right;font-size:.57rem;color:var(--muted);margin-top:3px}.bracket-status.live{color:#ff6374}.bracket-status.done{color:#65e69b}.bracket-status.waiting{color:var(--gold)}.bracket-connector{position:absolute;right:-29px;top:50%;width:28px;border-top:1px solid rgba(160,120,240,.35)}.bracket-final .bracket-card{border-color:rgba(240,180,41,.7);box-shadow:0 0 25px rgba(240,180,41,.12)}.bracket-champion{margin-top:18px;text-align:center;background:linear-gradient(145deg,rgba(45,32,8,.55),rgba(18,15,25,.9));border:1px solid rgba(240,180,41,.55);border-radius:16px;padding:18px}.bracket-champion .bc-icon{font-size:2rem}.bracket-champion strong{display:block;color:var(--gold);font-size:1.15rem;margin-top:5px}.bracket-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 auto 14px}.bracket-pill{padding:7px 11px;border-radius:30px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);font-size:.68rem;color:#ddd}.bracket-pill strong{color:var(--gold)}
 @media(max-width:700px){.mini-bracket{grid-template-columns:repeat(4,150px);overflow-x:auto;padding-bottom:4px}.tourney-home-card{padding:13px}.bracket-top{align-items:flex-start;flex-direction:column}.bracket-top-actions{width:100%}.bracket-top-actions .btn{flex:1}.bracket-title h1{font-size:1.25rem}}
 
+
+/* ===== QUIZ ARENA HOME QUICK BAR / NOTIFICATIONS / AUDIO ===== */
+.home-quickbar{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:120;display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid rgba(255,255,255,.10);background:rgba(10,11,20,.72);backdrop-filter:blur(18px);border-radius:999px;box-shadow:0 12px 34px rgba(0,0,0,.28)}
+.home-quickbar .circle-btn{position:relative;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.05rem;cursor:pointer;transition:transform .2s,border-color .2s,background .2s}.home-quickbar .circle-btn:hover{transform:translateY(-2px);background:rgba(255,255,255,.10);border-color:rgba(240,180,41,.45)}.home-quickbar .circle-btn.active{border-color:rgba(240,180,41,.65);background:rgba(240,180,41,.12);box-shadow:0 0 22px rgba(240,180,41,.15)}
+.quick-badge{position:absolute;top:-3px;right:-1px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font:800 .58rem/17px Oxanium,sans-serif;text-align:center}.home-quick-label{font-size:.62rem;color:var(--muted);margin:0 3px;white-space:nowrap}
+.notif-panel{position:fixed;top:74px;right:18px;z-index:125;width:min(360px,calc(100vw - 28px));background:rgba(13,14,25,.95);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.12);border-radius:18px;box-shadow:0 22px 70px rgba(0,0,0,.45);padding:12px;display:none}.notif-panel.open{display:block;animation:panelIn .2s ease}@keyframes panelIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.notif-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 4px 10px;border-bottom:1px solid rgba(255,255,255,.08)}.notif-head strong{font-size:.85rem;color:#fff}.notif-head button{background:none;border:none;color:var(--muted);cursor:pointer}.notif-list{max-height:330px;overflow:auto;padding-top:7px}.notif-item{display:flex;gap:10px;align-items:flex-start;padding:10px 8px;border-radius:12px;margin-bottom:6px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055)}.notif-item .ni-icon{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 30px;background:rgba(124,58,237,.15)}.notif-item .ni-text{font-size:.72rem;line-height:1.55;color:#eaeaea}.notif-item small{display:block;color:var(--muted);font-size:.6rem;margin-top:2px}.notif-empty{text-align:center;color:var(--muted);font-size:.72rem;padding:24px 10px}
+.dash-shell{width:100%;max-width:850px;padding:0 4px 30px}.dash-actions{display:flex;justify-content:center;gap:8px;margin:8px 0 18px;flex-wrap:wrap}.dash-actions .btn{min-width:150px}.dash-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;margin-bottom:18px}.dash-big-stat{background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:17px 10px;text-align:center;min-width:0}.dash-big-stat .icon{font-size:1.25rem}.dash-big-stat .value{font:800 1.7rem Oxanium,sans-serif;color:var(--gold);margin-top:6px}.dash-big-stat .label{font-size:.66rem;color:var(--muted);margin-top:3px;line-height:1.35}.dash-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}.dash-summary-card{background:var(--glass);border:1px solid var(--gb);border-radius:15px;padding:13px 15px}.dash-summary-card h3{font-size:.76rem;color:#fff;margin-bottom:5px}.dash-summary-card p{font-size:.68rem;color:var(--muted);margin:0}.dash-note{padding:12px 14px;border-radius:14px;border:1px dashed rgba(240,180,41,.22);background:rgba(240,180,41,.055);font-size:.68rem;color:#ddd;margin-bottom:18px}
+button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media(max-width:900px){.screen{padding-left:12px;padding-right:12px}.bracket-board{gap:18px;min-width:980px}.bracket-card{padding:9px}.match-hdr{max-width:680px;gap:9px}.match-q,.match-agrid{max-width:680px}}
+@media(max-width:700px){.screen{padding:82px 10px 32px;min-height:100dvh}.screen.top{padding-top:82px}.home-quickbar{top:10px;gap:6px;padding:6px 7px}.home-quickbar .circle-btn{width:43px;height:43px}.home-quick-label{display:none}.notif-panel{top:65px;right:10px}.logo h1{letter-spacing:3px;font-size:clamp(1.8rem,9vw,2.7rem)}.logo p{letter-spacing:3px;font-size:.68rem}.cd-card{padding:22px 12px;border-radius:18px}.cd-grid{gap:6px}.cd-unit{min-width:66px;padding:12px 4px}.cd-num{font-size:1.55rem}.btn{width:100%;padding:15px 20px;font-size:.96rem;min-height:50px}.tourney-home-card{margin-top:10px;border-radius:16px;padding:12px}.mini-bracket{grid-template-columns:repeat(4,142px);overflow-x:auto}.bracket-top{align-items:flex-start;flex-direction:column}.bracket-top-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.bracket-top-actions .btn{min-height:46px}.bracket-meta{gap:6px}.bracket-pill{font-size:.62rem;padding:7px 9px}.bracket-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.bracket-board{min-width:900px;gap:14px}.bracket-list{min-height:520px}.bracket-card{min-width:168px}.bracket-player{font-size:.68rem}.lobby-grid{grid-template-columns:repeat(2,1fr);gap:7px;width:100%}.lobby-chip{padding:10px 8px;font-size:.72rem}.match-hdr{gap:6px}.match-p{font-size:.78rem;padding:10px 5px}.match-q{padding:15px 12px;font-size:.95rem}.match-ab{padding:14px 10px;font-size:.84rem;min-height:54px}.card{padding:20px 15px;border-radius:17px}.dash-stat-grid{grid-template-columns:1fr 1fr;gap:8px}.dash-big-stat{padding:14px 8px}.dash-big-stat .value{font-size:1.45rem}.dash-summary{grid-template-columns:1fr}.dash-actions .btn{min-width:0;width:auto;flex:1}}
+@media(max-width:420px){.home-quickbar .circle-btn{width:41px;height:41px;font-size:.95rem}.home-quickbar{gap:4px}.cd-grid{display:grid!important;grid-template-columns:1fr 1fr}.cd-unit{max-width:none;min-width:0}.bracket-board{min-width:850px}.bracket-card{min-width:155px}.bracket-player{font-size:.64rem}.match-agrid{grid-template-columns:1fr}.dash-actions{display:grid;grid-template-columns:1fr}.dash-actions .btn{width:100%}}
+
 </style>
 </head>
 <body>
+<div class="home-quickbar" id="homeQuickBar"><span class="home-quick-label">QUIZ ARENA</span><button class="circle-btn" id="quickProfileBtn" title="Dashboard" onclick="openQuickDashboard()">👤</button><button class="circle-btn" id="quickNotifBtn" title="Notifications" onclick="toggleNotifications(event)">🔔<span class="quick-badge" id="quickNotifBadge" style="display:none">0</span></button><button class="circle-btn" id="quickMusicBtn" title="Music" onclick="toggleMusic()">🎵</button></div><div class="notif-panel" id="notifPanel"><div class="notif-head"><strong>🔔 ئاگادارکردنەوەکان</strong><button onclick="clearAppNotifications()">پاککردنەوە</button></div><div class="notif-list" id="notifList"><div class="notif-empty">هێشتا هیچ ئاگادارکردنەوەیەک نییە.</div></div></div>
+
 
 <!-- HOME -->
 <div id="s-home" class="screen active">
@@ -620,25 +635,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 </div>
 
 <!-- DASHBOARD -->
-<div id="s-dashboard" class="screen top">
-  <button class="bk" onclick="doLogout()">🚪 دەرچوون</button>
-  <div class="dash-head">
-    <div class="avatar" id="dashAvatar">🎮</div>
-    <div class="dash-name" id="dashName">—</div>
-    <div class="dash-phone" id="dashPhone">—</div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="sv" id="dashTrophies">0</div><div class="sl">🏆 مۆدال</div></div>
-    <div class="stat-card"><div class="sv" id="dashGames">0</div><div class="sl">🎮 یاری</div></div>
-    <div class="stat-card"><div class="sv" id="dashWins">0</div><div class="sl">✅ بردنەوە</div></div>
-  </div>
-  <div class="hist-wrap">
-    <div class="hist-title">مێژووی یاریەکان</div>
-    <div id="histList"><div class="hist-empty">هێشتا هیچ یارییەک نەکراوە — کاتژمێر ٩ی شەو بگە!</div></div>
-  </div>
-</div>
-
-<div class="notif" id="notif"></div>
+<div id="s-dashboard" class="screen top"><div class="dash-shell"><button class="bk" onclick="go('s-home')">← ماڵەوە</button><div class="dash-head"><div class="avatar" id="dashAvatar">🎮</div><div class="dash-name" id="dashName">—</div><div class="dash-phone" id="dashPhone">—</div></div><div class="dash-actions"><button class="btn btn-gold" onclick="go('s-home')">🏠 گەڕانەوە بۆ ماڵەوە</button><button class="btn btn-ghost" onclick="renderDashboard()">🔄 نوێکردنەوە</button></div><div class="dash-stat-grid"><div class="dash-big-stat"><div class="icon">🎮</div><div class="value" id="dashTournamentPlayed">0</div><div class="label">تۆرنمێنتی بەشداری تێدا کردوویت</div></div><div class="dash-big-stat"><div class="icon">✅</div><div class="value" id="dashCorrect">0</div><div class="label">پرسیاری ڕاست وەڵامدراو</div></div><div class="dash-big-stat"><div class="icon">❌</div><div class="value" id="dashWrong">0</div><div class="label">پرسیاری هەڵە وەڵامدراو</div></div><div class="dash-big-stat"><div class="icon">🏆</div><div class="value" id="dashChampionships">0</div><div class="label">براوەی تۆرنمێنت</div></div></div><div class="dash-summary"><div class="dash-summary-card"><h3>🏅 مۆدال</h3><p><strong id="dashTrophies">0</strong> مۆدال تاکوو ئێستا</p></div><div class="dash-summary-card"><h3>⚔️ یارییەکانی 1v1</h3><p><strong id="dashGames">0</strong> یاری — <strong id="dashWins">0</strong> بردنەوە</p></div></div><div class="dash-note">💡 داشبۆردی تایبەتی یاریزان: تۆرنمێنت، وەڵامی ڕاست، وەڵامی هەڵە و ژمارەی قەهرەمانییەکان.</div><div class="hist-wrap"><div class="hist-title">مێژووی یاریەکان</div><div id="histList"><div class="hist-empty">هێشتا هیچ یارییەک نەکراوە.</div></div></div></div></div><div class="notif" id="notif"></div>
 
 <script>
 // fbGet / fbPut / fbDelete / sha256 / normPhone / safeKey / rtdb / SRV_TS /
@@ -661,10 +658,12 @@ let liveTournamentState = "idle";
 //  NAV
 // ═══════════════════════════════════════════════════════
 function go(id) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
-  if (id === "s-dashboard") renderDashboard();
-  if (id === "s-bracket") renderTournamentBracket();
+  const qb=document.getElementById("homeQuickBar"); if(qb) qb.style.display=(id==="s-home"?"flex":"none");
+  if(id!=="s-home") document.getElementById("notifPanel")?.classList.remove("open");
+  if(id==="s-dashboard") renderDashboard();
+  if(id==="s-bracket") renderTournamentBracket();
 }
 
 function toggleEye(id) {
@@ -736,6 +735,7 @@ function applySessionUI() {
     initUserPresence(s.phone);
   }
   refreshHomeTourneyUI();
+  updateQuickActionsUI();
   watchForMyMatch(); // resumes an in-progress match automatically after a page refresh
   return s;
 }
@@ -750,6 +750,7 @@ async function loadHomeMiniStats(phone) {
     document.getElementById("miniTrophies").textContent = user.trophies || 0;
     document.getElementById("miniGames").textContent    = user.gamesPlayed || 0;
     document.getElementById("miniWins").textContent     = user.wins || 0;
+    updateQuickActionsUI();
   } catch (e) { /* keep last known values on a network hiccup */ }
 }
 
@@ -783,7 +784,7 @@ async function doRegister() {
     const passHash = await sha256(pass);
     const userObj = {
       username: name, passHash,
-      trophies: 0, gamesPlayed: 0, wins: 0, history: [], createdAt: Date.now()
+      trophies: 0, gamesPlayed: 0, wins: 0, tournamentsPlayed: 0, correctAnswers: 0, wrongAnswers: 0, championships: 0, tournamentDates: {}, history: [], createdAt: Date.now()
     };
     await fbPut("/users/" + phone, userObj);
     await saveSession({ phone, username: name });
@@ -851,24 +852,21 @@ async function doLogout() {
 async function renderDashboard() {
   const s = currentSession;
   if (!s) { go("s-home"); return; }
-  document.getElementById("dashName").textContent  = s.username;
-  document.getElementById("dashPhone").textContent = "+" + s.phone;
+  document.getElementById("dashName").textContent=s.username;
+  document.getElementById("dashPhone").textContent="+"+s.phone;
   try {
-    const user = await fbGet("/users/" + s.phone);
-    if (!user) { doLogout(); return; }
-    document.getElementById("dashTrophies").textContent = user.trophies || 0;
-    document.getElementById("dashGames").textContent    = user.gamesPlayed || 0;
-    document.getElementById("dashWins").textContent     = user.wins || 0;
-    const list = document.getElementById("histList");
-    const hist = user.history || [];
-    if (!hist.length) {
-      list.innerHTML = '<div class="hist-empty">هێشتا هیچ یارییەک نەکراوە — کاتژمێر ٩ی شەو بگە!</div>';
-    } else {
-      list.innerHTML = hist.slice().reverse().map(h =>
-        `<div class="hist-item"><span>${h.date || ""}</span><span>${h.result || ""}</span></div>`
-      ).join("");
-    }
-  } catch (e) { /* keep cached UI on network hiccup */ }
+    const user=await fbGet("/users/"+s.phone);
+    if(!user){doLogout();return;}
+    document.getElementById("dashTrophies").textContent=user.trophies||0;
+    document.getElementById("dashGames").textContent=user.gamesPlayed||0;
+    document.getElementById("dashWins").textContent=user.wins||0;
+    document.getElementById("dashTournamentPlayed").textContent=user.tournamentsPlayed||0;
+    document.getElementById("dashCorrect").textContent=user.correctAnswers||0;
+    document.getElementById("dashWrong").textContent=user.wrongAnswers||0;
+    document.getElementById("dashChampionships").textContent=user.championships||0;
+    const list=document.getElementById("histList"),hist=user.history||[];
+    list.innerHTML=hist.length?hist.slice().reverse().map(h=>`<div class="hist-item"><span>${escapeHTML(h.date||"")}</span><span>${escapeHTML(h.result||"")}</span></div>`).join(""):'<div class="hist-empty">هێشتا هیچ یارییەک نەکراوە.</div>';
+  }catch(e){console.warn("renderDashboard",e);}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1073,6 +1071,32 @@ function todayStr() {
 }
 function safeKey(phone) { return String(phone).replace(/[^0-9a-zA-Z]/g, ""); }
 
+// ===== CLIENT AUDIO ENGINE =====
+let audioCtx=null,musicTimer=null,audioStarted=false,musicStep=0;let musicEnabled=localStorage.getItem("quiz_music_enabled")!=="0";
+const ambientChords=[[196,246.94,293.66],[174.61,220,261.63],[164.81,207.65,246.94],[146.83,196,246.94]];
+function ensureAudio(){try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();audioStarted=true;return true}catch(e){return false}}
+function audioTone(freq,dur=.15,type="sine",gain=.035,when=0){if(!musicEnabled||!ensureAudio())return;const t=audioCtx.currentTime+when,o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();o.type=type;o.frequency.setValueAtTime(freq,t);f.type="lowpass";f.frequency.setValueAtTime(1700,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(f);f.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+dur+.03)}
+function playSfx(kind){if(!musicEnabled)return;const m={start:[[392,.12,"triangle",.045,0],[523.25,.16,"triangle",.05,.10],[659.25,.22,"sine",.045,.20]],correct:[[659.25,.10,"sine",.045,0],[783.99,.14,"sine",.04,.10],[987.77,.18,"sine",.03,.23]],wrong:[[311.13,.14,"sawtooth",.025,0],[246.94,.22,"sawtooth",.022,.12]],tick:[[880,.055,"sine",.028,0]],victory:[[523.25,.12,"triangle",.04,0],[659.25,.12,"triangle",.045,.10],[783.99,.18,"triangle",.05,.22],[1046.5,.28,"sine",.05,.38]],loss:[[392,.13,"sine",.035,0],[329.63,.16,"sine",.03,.13],[261.63,.26,"sine",.025,.28]],final:[[523.25,.13,"triangle",.045,0],[659.25,.13,"triangle",.05,.12],[783.99,.16,"triangle",.05,.25],[1046.5,.24,"triangle",.055,.41],[1318.5,.35,"sine",.045,.68]]};(m[kind]||[]).forEach(a=>audioTone(...a))}
+function ambientLoop(){if(!musicEnabled||!audioStarted)return;ambientChords[musicStep++%ambientChords.length].forEach((f,i)=>audioTone(f,.95,"sine",.010,i*.05))}
+function startMusic(){if(!musicEnabled||!ensureAudio()||musicTimer)return;ambientLoop();musicTimer=setInterval(ambientLoop,1900)}
+function stopMusic(){if(musicTimer){clearInterval(musicTimer);musicTimer=null}}
+function toggleMusic(){musicEnabled=!musicEnabled;localStorage.setItem("quiz_music_enabled",musicEnabled?"1":"0");if(musicEnabled){ensureAudio();startMusic();playSfx("start")}else stopMusic();updateMusicButton()}
+function updateMusicButton(){const b=document.getElementById("quickMusicBtn");if(b){b.textContent=musicEnabled?"🎵":"🔇";b.classList.toggle("active",musicEnabled)}}
+document.addEventListener("pointerdown",()=>{if(musicEnabled){ensureAudio();startMusic()}},{passive:true});
+
+// ===== APP NOTIFICATIONS =====
+let appNotifications=[];
+function loadAppNotifications(){try{appNotifications=JSON.parse(localStorage.getItem("quiz_notifications")||"[]")}catch(e){appNotifications=[]}renderAppNotifications()}
+function saveAppNotifications(){localStorage.setItem("quiz_notifications",JSON.stringify(appNotifications.slice(0,30)))}
+function pushAppNotification(text,icon="🔔"){appNotifications.unshift({text,icon,at:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})});appNotifications=appNotifications.slice(0,30);saveAppNotifications();renderAppNotifications()}
+function renderAppNotifications(){const list=document.getElementById("notifList"),badge=document.getElementById("quickNotifBadge");if(!list||!badge)return;if(!appNotifications.length){list.innerHTML='<div class="notif-empty">هێشتا هیچ ئاگادارکردنەوەیەک نییە.</div>';badge.style.display="none";return}list.innerHTML=appNotifications.map(n=>`<div class="notif-item"><div class="ni-icon">${n.icon}</div><div class="ni-text">${escapeHTML(n.text)}<small>${escapeHTML(n.at)}</small></div></div>`).join("");badge.textContent=String(Math.min(appNotifications.length,99));badge.style.display="block"}
+function toggleNotifications(e){if(e)e.stopPropagation();document.getElementById("notifPanel")?.classList.toggle("open")}
+function clearAppNotifications(){appNotifications=[];saveAppNotifications();renderAppNotifications()}
+document.addEventListener("click",e=>{const p=document.getElementById("notifPanel"),b=document.getElementById("quickNotifBtn");if(p&&p.classList.contains("open")&&b&&!p.contains(e.target)&&!b.contains(e.target))p.classList.remove("open")})
+function openQuickDashboard(){if(currentSession)go("s-dashboard");else go("s-login")}
+function updateQuickActionsUI(){updateMusicButton()}
+loadAppNotifications();updateQuickActionsUI();let lastMatchStartSoundKey="",countdownSoundAt=null;
+
 // ── Home-screen wiring: join button + champion banner + spectate link ──
 let homeTourneyListenerAttached = false;
 let prevTournamentState = null; // tracks transitions so we can react when admin ends the game
@@ -1268,6 +1292,10 @@ async function updateTournamentHomePreview(){
 }
 function openTournamentBracket(){ go('s-bracket'); renderTournamentBracket(); }
 
+async function incrementUserCounter(phone,field,amount=1){try{await rtdb.ref("users/"+safeKey(phone)+"/"+field).transaction(v=>(Number(v)||0)+amount)}catch(e){console.warn("incrementUserCounter",field,e)}}
+async function recordTournamentParticipation(phone){try{const date=todayStr(),ref=rtdb.ref("users/"+safeKey(phone)+"/tournamentDates/"+date);const res=await ref.transaction(v=>v?undefined:true);if(res.committed)await incrementUserCounter(phone,"tournamentsPlayed",1)}catch(e){console.warn("recordTournamentParticipation",e)}}
+async function recordAnswerStat(phone,isCorrect){await incrementUserCounter(phone,isCorrect?"correctAnswers":"wrongAnswers",1)}
+
 async function joinLobby() {
   const s = currentSession;
   if (!s) { go("s-login"); return; }
@@ -1291,6 +1319,7 @@ async function joinLobby() {
   }
   const lobbyRef = rtdb.ref("tournament/lobby/" + safeKey(s.phone));
   await lobbyRef.set({ phone: s.phone, username: s.username, joinedAt: SRV_TS });
+  recordTournamentParticipation(s.phone);
   // FIX: if a player closes the tab / loses connection while sitting in
   // the waiting room, their name used to stay listed forever (nothing
   // ever removed it). onDisconnect() here means Firebase itself removes
@@ -1316,10 +1345,12 @@ async function leaveLobby() {
   sawSelfInLobby = false;
   if (s) {
     try {
-      const lobbyRef = rtdb.ref("tournament/lobby/" + safeKey(s.phone));
-      lobbyRef.onDisconnect().cancel(); // no longer needed, we're removing it ourselves right now
-      await lobbyRef.remove();
-    } catch (e) {}
+      const stateSnap=await rtdb.ref("tournament/state").once("value"); const st=stateSnap.val()||"idle";
+      if(st==="idle"||st==="lobby_open"){
+        const lobbyRef=rtdb.ref("tournament/lobby/"+safeKey(s.phone));
+        lobbyRef.onDisconnect().cancel(); await lobbyRef.remove();
+      }
+    } catch(e){}
   }
   if (lobbyUnsub) { lobbyUnsub(); lobbyUnsub = null; }
   go("s-home");
@@ -1357,8 +1388,30 @@ function watchLobby() {
       if (imIn) sawSelfInLobby = true;
       else if (sawSelfInLobby) {
         sawSelfInLobby = false;
-        notif("ئەدمین ژووری چاوەڕوانی داخست", "inf");
-        go("s-home");
+        // Do not trust the lobby snapshot alone: bracket generation clears
+        // /tournament/lobby at the same time it changes /tournament/state.
+        // Read the state directly so a fast snapshot can never falsely look
+        // like an admin kick.
+        rtdb.ref("tournament/state").once("value").then(stateSnap => {
+          const st = stateSnap.val() || "idle";
+          liveTournamentState = st;
+          if (st.startsWith("round_")) {
+            watchForMyMatch();
+            return;
+          }
+          if (st === "finished") {
+            go("s-home");
+            return;
+          }
+          if (st === "idle" || st === "lobby_open") {
+            notif(lobbyClosedFlag ? "ژووری چاوەڕوانی داخراوە" : "لە ژوورەکە دەرچوویت", "inf");
+            go("s-home");
+          }
+        }).catch(() => {
+          // On a transient read failure, never kick the player. Keep the
+          // lobby screen until the next Firebase state event.
+          sawSelfInLobby = true;
+        });
       }
     }
   };
@@ -1713,6 +1766,8 @@ function renderMatchLive(round, matchId, mv) {
   document.getElementById("matchP1").textContent = me.username + " (تۆ)";
   document.getElementById("matchP2").textContent = opp.username;
   document.getElementById("matchQ").textContent = mv.question.question;
+  const matchSoundKey=round+"/"+matchId+"/"+(mv.qStartAt||"");
+  if(matchSoundKey!==lastMatchStartSoundKey){lastMatchStartSoundKey=matchSoundKey;playSfx("start");pushAppNotification("یاری دەستیپێکرد: "+me.username+" VS "+opp.username,"⚔️")}
 
   const myAns  = (mv.answers || {})[safeKey(me.phone)];
   const oppAns = (mv.answers || {})[safeKey(opp.phone)];
@@ -1742,6 +1797,7 @@ function renderMatchLive(round, matchId, mv) {
     document.getElementById("matchTNum").textContent = left;
     document.getElementById("matchTFill").style.strokeDashoffset = 251.2 * (1 - left / total);
     document.getElementById("matchTFill").style.stroke = left <= 5 ? "#e63946" : "var(--gold)";
+    if(left<=3&&left>0&&countdownSoundAt!==(round+"/"+matchId+"/"+left)){countdownSoundAt=round+"/"+matchId+"/"+left;playSfx("tick")}
     if (left <= 0) {
       clearInterval(myMatchTimerI);
       tryResolveMatch(round, matchId);
@@ -1752,6 +1808,7 @@ function renderMatchLive(round, matchId, mv) {
 async function submitMatchAnswer(round, matchId, choice) {
   if (matchAnswered) return;
   matchAnswered = true;
+  playSfx("tick");
   const s = currentSession;
   await rtdb.ref("tournament/matches/round_" + round + "/" + matchId + "/answers/" + safeKey(s.phone))
     .set({ choice, at: serverNow() });
@@ -1800,22 +1857,21 @@ async function tryResolveMatch(round, matchId) {
   maybeAdvanceRound(round);
 }
 
-async function recordMatchStats(p1, p2, winner) {
-  for (const p of [p1, p2]) {
-    if (p.isBot) continue;
-    const won = p.phone === winner.phone;
-    try {
-      const user = await fbGet("/users/" + p.phone);
-      if (!user) continue;
-      const hist = user.history || [];
-      hist.push({ date: new Date().toLocaleDateString("en-GB"), result: won ? "بردنەوە ✅" : "دەرچوون ❌" });
-      await fbPut("/users/" + p.phone, {
-        ...user,
-        gamesPlayed: (user.gamesPlayed || 0) + 1,
-        wins: (user.wins || 0) + (won ? 1 : 0),
-        history: hist.slice(-30)
+async function recordMatchStats(p1,p2,winner){
+  for(const p of [p1,p2]){
+    if(p.isBot) continue;
+    const won=p.phone===winner.phone;
+    try{
+      const base="users/"+safeKey(p.phone);
+      await rtdb.ref(base+"/gamesPlayed").transaction(v=>(Number(v)||0)+1);
+      if(won) await rtdb.ref(base+"/wins").transaction(v=>(Number(v)||0)+1);
+      const hRef=rtdb.ref(base+"/history");
+      await hRef.transaction(hist=>{
+        const arr=Array.isArray(hist)?hist:[];
+        arr.push({date:new Date().toLocaleDateString("en-GB"),result:won?"بردنەوە ✅":"دەرچوون ❌"});
+        return arr.slice(-30);
       });
-    } catch (e) {}
+    }catch(e){console.warn("recordMatchStats",e)}
   }
 }
 
@@ -1828,7 +1884,10 @@ function handleMatchDone(round, matchId, mv) {
   if (myMatchUnsub) { myMatchUnsub(); myMatchUnsub = null; myMatchPath = null; }
   if (oppPresenceUnsub) { oppPresenceUnsub(); oppPresenceUnsub = null; }
 
+  const myAnswer=(mv.answers||{})[safeKey(s.phone)];
+  if(typeof mv.correct==="number"&&myAnswer){const isCorrect=myAnswer.choice===mv.correct;recordAnswerStat(s.phone,isCorrect);playSfx(isCorrect?"correct":"wrong");pushAppNotification(isCorrect?"وەڵامەکەت ڕاست بوو ✅":"وەڵامەکەت هەڵە بوو ❌",isCorrect?"✅":"❌")}
   if (!iWon) {
+    playSfx("loss"); pushAppNotification("لە دەوری "+round+" دەرچوویت.","❌");
     document.getElementById("elimSub").textContent = mv.disconnectWin
       ? opp.username + " لە یاریەکە کشایەوە."
       : opp.username + " براوە بوو لەم گەڕدا. هیوادارین جاری داهاتوو زیاتر بەختت هەبێت!";
@@ -1838,6 +1897,7 @@ function handleMatchDone(round, matchId, mv) {
   }
 
   if (round === "2") {
+    playSfx("final"); pushAppNotification("🎉 تۆ براوەی گشتی تۆرنمێنتی ئەمشەویت!","🏆");
     document.getElementById("mrEmoji").textContent = "🏆";
     document.getElementById("mrTitle").textContent = "براوەی ئەمشەوی!";
     document.getElementById("mrSub").textContent = "پیرۆزە! تۆ براوەی گشتی تۆرنمێنتی ئەمشەوی!";
@@ -1846,6 +1906,7 @@ function handleMatchDone(round, matchId, mv) {
     return;
   }
 
+  playSfx("victory"); pushAppNotification("✅ لە دەوری "+round+" بردتەوە و چوویتە پێش.","🏆");
   document.getElementById("mrEmoji").textContent = "✅";
   document.getElementById("mrTitle").textContent = mv.disconnectWin ? "یاریزانەکەت کشایەوە — تۆ چوویتە پێش!" : "بردتەوە!";
   document.getElementById("mrSub").textContent = "چاوەڕوانی دەوری داهاتوو بکە...";
@@ -1948,8 +2009,9 @@ async function maybeAdvanceRound(round) {
     });
     if (!champion.isBot) {
       try {
-        const user = await fbGet("/users/" + champion.phone);
-        if (user) await fbPut("/users/" + champion.phone, { ...user, trophies: (user.trophies || 0) + 1 });
+        const base="users/"+safeKey(champion.phone);
+        await rtdb.ref(base+"/trophies").transaction(v=>(Number(v)||0)+1);
+        await rtdb.ref(base+"/championships").transaction(v=>(Number(v)||0)+1);
       } catch (_) {}
     }
     return;
