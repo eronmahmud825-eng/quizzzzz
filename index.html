@@ -325,6 +325,18 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .notif.suc{background:var(--ok);color:#001a0f;}
 .notif.err{background:var(--ng);color:#fff;}
 .notif.inf{background:var(--blue);color:#fff;}
+
+/* ═══════════════════════════════════════════════════════
+   PROFESSIONAL TOURNAMENT BRACKET
+   ═══════════════════════════════════════════════════════ */
+.tourney-home-card{width:100%;max-width:900px;margin:16px auto 20px;background:linear-gradient(145deg,rgba(20,16,28,.96),rgba(9,11,22,.98));border:1px solid rgba(240,180,41,.24);border-radius:20px;padding:18px;box-shadow:0 15px 50px rgba(0,0,0,.28)}
+.tourney-home-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.tourney-home-head h3{margin:0;color:#fff;font-size:1rem}.tourney-home-head span{font-size:.72rem;color:var(--gold)}
+.mini-bracket{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;overflow:hidden}.mini-col{min-width:0}.mini-col-title{text-align:center;color:var(--muted);font-size:.65rem;font-weight:800;margin-bottom:7px}.mini-match{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:9px;padding:6px 8px;margin-bottom:7px;font-size:.67rem}.mini-match.live{border-color:rgba(255,70,90,.65);box-shadow:0 0 12px rgba(255,70,90,.12)}.mini-match.done{border-color:rgba(60,220,130,.3)}.mini-player{display:flex;justify-content:space-between;gap:5px;white-space:nowrap;overflow:hidden}.mini-player b{overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#eee}.mini-player em{font-style:normal;color:var(--muted);font-size:.6rem}.mini-player.win b{color:#65e69b}.mini-empty{height:40px;margin-bottom:7px;border:1px dashed rgba(255,255,255,.06);border-radius:9px}
+.tourney-home-actions{display:flex;gap:8px;margin-top:12px}.tourney-home-actions .btn{flex:1}
+/* full bracket */
+.bracket-screen{width:100%;max-width:1500px;margin:0 auto;padding:10px 10px 30px}.bracket-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.bracket-title h1{margin:0;color:#fff;font-size:1.5rem}.bracket-title p{margin:4px 0 0;color:var(--muted);font-size:.75rem}.bracket-top-actions{display:flex;gap:8px}.bracket-scroll{overflow-x:auto;padding:6px 2px 14px}.bracket-board{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:28px;min-width:1040px;align-items:start}.bracket-col{display:flex;flex-direction:column}.bracket-col-title{text-align:center;color:#fff;font-weight:800;font-size:.82rem;margin-bottom:8px}.bracket-col-title small{display:block;color:var(--muted);font-size:.62rem;font-weight:500;margin-top:3px}.bracket-list{display:flex;flex-direction:column;justify-content:space-around;gap:9px;min-height:560px}.bracket-card{position:relative;background:linear-gradient(145deg,rgba(26,24,35,.98),rgba(12,13,25,.98));border:1px solid rgba(132,92,220,.38);border-radius:11px;padding:8px 9px;box-shadow:0 8px 25px rgba(0,0,0,.18)}.bracket-card.live{border-color:rgba(255,70,90,.8);box-shadow:0 0 16px rgba(255,70,90,.15)}.bracket-card.done{border-color:rgba(60,220,130,.35)}.bracket-card.waiting{border-color:rgba(240,180,41,.28)}.bracket-player{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:4px 2px;color:#eee;font-size:.72rem}.bracket-player.winner{color:#65e69b;font-weight:800}.bracket-player .bp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bp-score{font-family:'Oxanium',sans-serif;font-weight:800;color:var(--gold)}.bracket-status{text-align:right;font-size:.57rem;color:var(--muted);margin-top:3px}.bracket-status.live{color:#ff6374}.bracket-status.done{color:#65e69b}.bracket-status.waiting{color:var(--gold)}.bracket-connector{position:absolute;right:-29px;top:50%;width:28px;border-top:1px solid rgba(160,120,240,.35)}.bracket-final .bracket-card{border-color:rgba(240,180,41,.7);box-shadow:0 0 25px rgba(240,180,41,.12)}.bracket-champion{margin-top:18px;text-align:center;background:linear-gradient(145deg,rgba(45,32,8,.55),rgba(18,15,25,.9));border:1px solid rgba(240,180,41,.55);border-radius:16px;padding:18px}.bracket-champion .bc-icon{font-size:2rem}.bracket-champion strong{display:block;color:var(--gold);font-size:1.15rem;margin-top:5px}.bracket-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 auto 14px}.bracket-pill{padding:7px 11px;border-radius:30px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);font-size:.68rem;color:#ddd}.bracket-pill strong{color:var(--gold)}
+@media(max-width:700px){.mini-bracket{grid-template-columns:repeat(4,150px);overflow-x:auto;padding-bottom:4px}.tourney-home-card{padding:13px}.bracket-top{align-items:flex-start;flex-direction:column}.bracket-top-actions{width:100%}.bracket-top-actions .btn{flex:1}.bracket-title h1{font-size:1.25rem}}
+
 </style>
 </head>
 <body>
@@ -392,8 +404,51 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
     </div>
   </div>
 
+
+  <!-- LIVE TOURNAMENT PREVIEW: visible to everyone on the home page -->
+  <div class="tourney-home-card" id="homeTournamentCard" style="display:none">
+    <div class="tourney-home-head">
+      <h3>🏆 تۆرنمێنتی ئەمشەو</h3>
+      <span id="homeTournamentRound">—</span>
+    </div>
+    <div class="mini-bracket" id="homeMiniBracket"></div>
+    <div class="tourney-home-actions">
+      <button class="btn btn-gold" onclick="openTournamentBracket()">🏆 بینینی براکەت</button>
+    </div>
+  </div>
+
   <div class="note" id="homeNote">
     یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.
+  </div>
+</div>
+
+
+<!-- PROFESSIONAL TOURNAMENT BRACKET -->
+<div id="s-bracket" class="screen">
+  <div class="bracket-screen">
+    <div class="bracket-top">
+      <div class="bracket-title">
+        <h1>🏆 تۆرنمێنت براکەت</h1>
+        <p id="bracketSubtitle">چاوەڕوانی داتاکانی یاری...</p>
+      </div>
+      <div class="bracket-top-actions">
+        <button class="btn btn-ghost" onclick="go('s-home')">← ماڵەوە</button>
+        <button class="btn btn-gold" onclick="renderTournamentBracket()">🔄 نوێکردنەوە</button>
+      </div>
+    </div>
+    <div class="bracket-meta">
+      <div class="bracket-pill">👥 یاریزان: <strong id="bracketPlayers">0</strong></div>
+      <div class="bracket-pill">🤖 بۆت: <strong id="bracketBots">0</strong></div>
+      <div class="bracket-pill">🔴 چالاک: <strong id="bracketLive">0</strong></div>
+      <div class="bracket-pill">✅ تەواوبوو: <strong id="bracketDone">0</strong></div>
+      <div class="bracket-pill">⚔️ دەور: <strong id="bracketRound">—</strong></div>
+    </div>
+    <div class="bracket-scroll">
+      <div class="bracket-board" id="fullBracket"></div>
+    </div>
+    <div class="bracket-champion" id="bracketChampion" style="display:none">
+      <div class="bc-icon">🏆</div><div>براوەی تۆرنمێنت</div><strong id="bracketChampionName">—</strong>
+    </div>
   </div>
 </div>
 
@@ -609,6 +664,7 @@ function go(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   if (id === "s-dashboard") renderDashboard();
+  if (id === "s-bracket") renderTournamentBracket();
 }
 
 function toggleEye(id) {
@@ -1070,6 +1126,7 @@ function refreshHomeTourneyUI() {
       }
     }
     prevTournamentState = state;
+    updateTournamentHomePreview();
 
     const champBanner = document.getElementById("champBanner");
     if (state === "finished") {
@@ -1102,6 +1159,9 @@ function refreshHomeTourneyUI() {
     }
     updateJoinRoomVisibility();
   });
+
+  // Everyone on the home page can watch the bracket update live.
+  rtdb.ref("tournament/matches").on("value", () => updateTournamentHomePreview());
 }
 
 let lobbyClosedFlag = false;
@@ -1121,6 +1181,93 @@ async function watchFinalIfLive() {
 }
 
 // ── JOIN LOBBY (capped at 32, first-come-first-served) ──
+
+// ═══════════════════════════════════════════════════════
+//  PUBLIC LIVE TOURNAMENT BRACKET
+//  Anyone on the home page can see who is playing, who won,
+//  and the current 1v1 round. No login is required to watch.
+// ═══════════════════════════════════════════════════════
+const BRACKET_ROUNDS = ["32","16","8","4","2"];
+const BRACKET_LABELS = {"32":"دەوری ٣٢","16":"دەوری ١٦","8":"چارەکۆتایی","4":"نیمەکۆتایی","2":"کۆتایی"};
+const BRACKET_COUNTS = {"32":16,"16":8,"8":4,"4":2,"2":1};
+let bracketLiveUnsub = null;
+
+function playerName(p){ return p && p.username ? p.username : "TBD"; }
+function roundMatches(t, r){ return (t && t.matches && t.matches["round_"+r]) || {}; }
+function statusText(st){ return st === "live" ? "🔴 LIVE" : st === "done" ? "✅ تەواوبوو" : st === "waiting" ? "⏳ چاوەڕوان" : "—"; }
+
+async function getTournamentSnapshot(){
+  return await new Promise(resolve => rtdb.ref("tournament").once("value", s => resolve(s.val() || null)));
+}
+
+function matchCardHTML(m, addConnector=false){
+  const players=m && m.players ? m.players : [];
+  const winner=m && m.winnerPhone;
+  const st=(m && m.status) || "waiting";
+  const p1=players[0], p2=players[1];
+  const score=(p)=> winner && p && p.phone===winner ? "✓" : "";
+  return `<div class="bracket-card ${st}${addConnector?'':''}">
+    <div class="bracket-player ${winner&&p1&&p1.phone===winner?'winner':''}"><span class="bp-name">${p1?.isBot?'🤖 ': '👤 '}${escapeHTML(playerName(p1))}</span><span class="bp-score">${score(p1)}</span></div>
+    <div class="bracket-player ${winner&&p2&&p2.phone===winner?'winner':''}"><span class="bp-name">${p2?.isBot?'🤖 ': '👤 '}${escapeHTML(playerName(p2))}</span><span class="bp-score">${score(p2)}</span></div>
+    <div class="bracket-status ${st}">${statusText(st)}</div>
+    ${addConnector?'<span class="bracket-connector"></span>':''}
+  </div>`;
+}
+function escapeHTML(v){ return String(v??"").replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+async function renderTournamentBracket(){
+  const board=document.getElementById("fullBracket"); if(!board) return;
+  const t=await getTournamentSnapshot();
+  if(!t){ board.innerHTML='<div class="card">هیچ تۆرنمێنتێک ئێستا نییە.</div>'; return; }
+  const current=String(t.currentRound||"");
+  const allPlayers=[]; let live=0,done=0;
+  BRACKET_ROUNDS.forEach(r=>Object.values(roundMatches(t,r)).forEach(m=>{
+    (m.players||[]).forEach(p=>{if(p) allPlayers.push(p)});
+    if(m.status==='live') live++; if(m.status==='done') done++;
+  }));
+  const uniq=new Map(allPlayers.map(p=>[p.phone,p]));
+  const bots=[...uniq.values()].filter(p=>p.isBot).length;
+  document.getElementById("bracketPlayers").textContent=uniq.size;
+  document.getElementById("bracketBots").textContent=bots;
+  document.getElementById("bracketLive").textContent=live;
+  document.getElementById("bracketDone").textContent=done;
+  document.getElementById("bracketRound").textContent=current?BRACKET_LABELS[current]||current:"—";
+  document.getElementById("bracketSubtitle").textContent=t.state==='finished'?'🏆 تۆرنمێنت تەواوبوو':(current?`🔴 ئێستا ${BRACKET_LABELS[current]||current} ـە`:'چاوەڕوانی دەستپێکردن');
+
+  board.innerHTML=BRACKET_ROUNDS.map((r,ri)=>{
+    const ms=roundMatches(t,r); const ids=Object.keys(ms).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+    const target=BRACKET_COUNTS[r];
+    let cards=ids.map((id,i)=>matchCardHTML(ms[id],ri<4));
+    while(cards.length<target) cards.push('<div class="mini-empty"></div>');
+    return `<div class="bracket-col ${r==='2'?'bracket-final':''}"><div class="bracket-col-title">${BRACKET_LABELS[r]}<small>${target*2} یاریزان</small></div><div class="bracket-list">${cards.join('')}</div></div>`;
+  }).join('');
+
+  const champ=t.champion;
+  const champBox=document.getElementById("bracketChampion");
+  champBox.style.display=champ?'block':'none';
+  if(champ) document.getElementById("bracketChampionName").textContent=(champ.isBot?'🤖 ':'👤 ')+champ.username;
+}
+
+async function updateTournamentHomePreview(){
+  const card=document.getElementById("homeTournamentCard"); if(!card || typeof rtdb==='undefined' || !rtdb) return;
+  try{
+    const t=await getTournamentSnapshot();
+    const active=t && t.state && !['idle','lobby_open'].includes(t.state);
+    if(!active){card.style.display='none'; return;}
+    card.style.display='block';
+    document.getElementById('homeTournamentRound').textContent=BRACKET_LABELS[String(t.currentRound||'')]||'LIVE';
+    const mini=document.getElementById('homeMiniBracket');
+    const order=['32','16','8','4'];
+    mini.innerHTML=order.map(r=>{
+      const ms=roundMatches(t,r); const ids=Object.keys(ms).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+      let shown=ids.slice(0,4).map(id=>{const m=ms[id]; return `<div class="mini-match ${m.status||''}"><div class="mini-player ${m.winnerPhone===m.players?.[0]?.phone?'win':''}"><b>${m.players?.[0]?.isBot?'🤖 ':''}${escapeHTML(playerName(m.players?.[0]))}</b><em>${m.winnerPhone===m.players?.[0]?.phone?'✓':''}</em></div><div class="mini-player ${m.winnerPhone===m.players?.[1]?.phone?'win':''}"><b>${m.players?.[1]?.isBot?'🤖 ':''}${escapeHTML(playerName(m.players?.[1]))}</b><em>${m.winnerPhone===m.players?.[1]?.phone?'✓':''}</em></div></div>`});
+      if(!shown.length) shown=['<div class="mini-empty"></div>'];
+      return `<div class="mini-col"><div class="mini-col-title">${BRACKET_LABELS[r]}</div>${shown.join('')}</div>`;
+    }).join('');
+  }catch(e){console.warn('home bracket preview',e)}
+}
+function openTournamentBracket(){ go('s-bracket'); renderTournamentBracket(); }
+
 async function joinLobby() {
   const s = currentSession;
   if (!s) { go("s-login"); return; }
@@ -2107,6 +2254,9 @@ function notif(msg, type) {
 }
 
 bootSession();
+setTimeout(() => {
+  try { refreshHomeTourneyUI(); updateTournamentHomePreview(); } catch(e) {}
+}, 300);
 </script>
 </body>
 </html>
