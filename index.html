@@ -369,33 +369,6 @@ button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:tr
 @media(max-width:420px){.home-quickbar .circle-btn{width:41px;height:41px;font-size:.95rem}.home-quickbar{gap:4px}.cd-grid{display:grid!important;grid-template-columns:1fr 1fr}.cd-unit{max-width:none;min-width:0}.bracket-board{min-width:850px}.bracket-card{min-width:155px}.bracket-player{font-size:.64rem}.match-agrid{grid-template-columns:1fr}.dash-actions{display:grid;grid-template-columns:1fr}.dash-actions .btn{width:100%}}
 
 .match-q{user-select:none;-webkit-user-select:none}.match-timer .tn{font-variant-numeric:tabular-nums;min-width:2ch;text-align:center}.match-status{min-height:22px}
-
-/* ===== STEAMPUNK / CYBER HOME REDESIGN ===== */
-.home-arena{width:min(1440px,100%);margin:0 auto;padding:26px 14px 40px;display:grid;grid-template-columns:270px minmax(0,1fr) 310px;gap:18px;direction:ltr}
-.home-arena>*{direction:rtl}
-.arena-top{grid-column:1/-1;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;padding:10px 18px 18px;border-bottom:1px solid rgba(240,180,41,.16)}
-.arena-brand{justify-self:center;text-align:center;position:relative;padding:10px 48px 12px;min-width:min(520px,80vw);border:2px solid rgba(240,180,41,.55);border-radius:20px;background:linear-gradient(180deg,rgba(24,28,38,.96),rgba(8,12,20,.98));box-shadow:0 0 30px rgba(240,180,41,.12),inset 0 0 24px rgba(255,255,255,.03)}
-.arena-brand:before,.arena-brand:after{content:'';position:absolute;top:50%;width:28px;height:44px;transform:translateY(-50%);border:1px solid rgba(240,180,41,.55);background:linear-gradient(145deg,#8c621c,#2a2012);box-shadow:0 0 15px rgba(240,180,41,.16)}
-.arena-brand:before{left:-15px;border-radius:8px 2px 2px 8px}.arena-brand:after{right:-15px;border-radius:2px 8px 8px 2px}
-.arena-brand h1{font:800 clamp(2rem,5vw,3.8rem)/1 Oxanium,sans-serif;letter-spacing:3px;color:#f6d98a;text-shadow:0 0 18px rgba(240,180,41,.32)}
-.arena-brand p{font-size:.74rem;color:#9ca7b5;letter-spacing:4px;margin-top:8px}
-.arena-actions{display:flex;gap:9px;justify-content:flex-end}.arena-icon{width:52px;height:52px;border-radius:50%;border:1px solid rgba(240,180,41,.5);background:radial-gradient(circle at 35% 30%,#25364d,#0a111c);color:#f5d98b;font-size:1.25rem;cursor:pointer;box-shadow:inset 0 0 16px rgba(255,255,255,.04),0 6px 20px rgba(0,0,0,.35)}
-.arena-status{justify-self:start;display:flex;align-items:center;gap:9px;padding:9px 16px;border-radius:999px;background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.28);color:#72f6cf;font-size:.78rem;font-weight:800}
-.arena-dot{width:9px;height:9px;border-radius:50%;background:#06d6a0;box-shadow:0 0 12px #06d6a0;animation:pulse-dot 1.3s infinite}
-.arena-wheel-panel,.arena-side-panel,.arena-hero-panel{border:1px solid rgba(196,145,48,.35);background:linear-gradient(145deg,rgba(14,24,35,.97),rgba(5,10,18,.98));box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 0 30px rgba(255,255,255,.02);border-radius:22px}
-.arena-wheel-panel{padding:18px;display:flex;align-items:center;justify-content:center;min-height:390px}
-.category-wheel{width:235px;height:235px;border-radius:50%;position:relative;display:grid;place-items:center;background:conic-gradient(from -15deg,#142536 0 10%,#25384b 10% 20%,#142536 20% 30%,#25384b 30% 40%,#142536 40% 50%,#25384b 50% 60%,#142536 60% 70%,#25384b 70% 80%,#142536 80% 90%,#25384b 90%);border:9px solid #6f5122;box-shadow:0 0 0 3px #b78935,0 0 35px rgba(240,180,41,.16),inset 0 0 30px #000}
-.category-wheel:before{content:'';position:absolute;inset:18px;border-radius:50%;border:2px dashed rgba(240,180,41,.5)}
-.wheel-core{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;text-align:center;padding:12px;background:radial-gradient(circle,#293c51,#0b121c 70%);border:3px solid #b78935;box-shadow:0 0 20px rgba(240,180,41,.25);font-weight:900;color:#f3d48a;font-size:.86rem}
-.wheel-icon{position:absolute;font-size:1.1rem;color:#e7c77e}.wi1{top:25px}.wi2{right:33px;top:65px}.wi3{right:25px;bottom:48px}.wi4{bottom:24px}.wi5{left:28px;bottom:52px}.wi6{left:28px;top:62px}.wi7{top:35px;left:74px}.wi8{right:72px;top:31px}
-.arena-center{display:flex;flex-direction:column;gap:15px}.arena-gauges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.gauge{min-width:0;aspect-ratio:1/.82;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 45% 35%,#29405a,#0b121c 66%);border:7px solid #6f5122;box-shadow:0 0 0 2px #b78935,inset 0 0 24px #000,0 7px 20px rgba(0,0,0,.45);position:relative}.gauge:after{content:'';position:absolute;inset:-12px;border-radius:50%;border:1px dashed rgba(240,180,41,.28)}.gauge .num{font:800 clamp(1.5rem,4vw,2.5rem)/1 Oxanium;color:#f1d17c}.gauge .lbl{font-size:.68rem;color:#aeb8c4;margin-top:6px}.arena-clock{text-align:center;color:#dfe5ec;font:700 1.05rem Oxanium,sans-serif;letter-spacing:1px}.arena-tabs{display:flex;gap:7px;padding:8px;border:1px solid rgba(196,145,48,.35);border-radius:18px;background:rgba(9,15,24,.9);overflow:auto}.arena-tab{white-space:nowrap;padding:12px 18px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.03);color:#d9dee5;font-weight:800;cursor:pointer}.arena-tab.active{background:linear-gradient(135deg,#b57c13,#e6ad2f);color:#15100a;box-shadow:0 5px 20px rgba(240,180,41,.22)}
-.arena-hero-panel{min-height:210px;padding:18px;display:grid;grid-template-columns:1fr 180px 1fr;align-items:center;gap:15px;overflow:hidden}.hero-side{text-align:center}.hero-side .hero-title{color:#aeb8c4;font-size:.76rem}.hero-side .hero-name{font-size:1.05rem;font-weight:900;color:#f1d17c;margin-top:7px}.hero-side .hero-icon{font-size:2.2rem;margin-bottom:3px}.hero-trophy{height:170px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(180,150,80,.18),rgba(8,15,24,.9));border:1px solid rgba(240,180,41,.35);position:relative}.hero-trophy:before{content:'';position:absolute;inset:10px;border:1px solid rgba(240,180,41,.2);border-radius:15px}.hero-trophy span{font-size:5rem;filter:drop-shadow(0 0 20px rgba(240,180,41,.35))}
-.arena-side-panel{padding:15px}.panel-title{display:flex;justify-content:space-between;align-items:center;color:#f0d38a;font-weight:900;margin-bottom:12px}.panel-title small{font-size:.65rem;color:#7af5d1}.live-list{display:flex;flex-direction:column;gap:8px}.live-match{padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:rgba(255,255,255,.025)}.live-row{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:.73rem;font-weight:800}.live-vs{color:#d29c2a;font:800 .65rem Oxanium}.live-state{display:inline-block;margin-top:7px;font:800 .62rem Oxanium;color:#ff747d}.live-state.wait{color:#f2c75c}.view-bracket{width:100%;margin-top:11px}
-.arena-info{margin-top:12px;padding:14px;border:1px solid rgba(255,255,255,.07);border-radius:15px;background:rgba(255,255,255,.02)}.arena-info p{font-size:.72rem;color:#9ca7b5;margin:5px 0}.arena-info strong{color:#e8edf3}
-.arena-profile{padding:16px;margin-top:12px;border:1px solid rgba(240,180,41,.22);border-radius:18px;background:linear-gradient(145deg,rgba(28,31,41,.9),rgba(9,12,19,.95))}.profile-line{display:flex;align-items:center;gap:10px}.profile-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#182536;border:2px solid #b78935;font-size:1.35rem}.profile-name{font-weight:900}.profile-sub{font-size:.66rem;color:#8995a3}.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:12px}.profile-stat{text-align:center;background:rgba(255,255,255,.035);padding:8px 2px;border-radius:9px}.profile-stat b{display:block;color:#f1c85e;font:800 1rem Oxanium}.profile-stat span{font-size:.55rem;color:#8995a3}
-.arena-footer{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:14px 4px;color:#687482;font-size:.68rem}.arena-footer-actions{display:flex;gap:8px}.arena-footer button{border:1px solid rgba(240,180,41,.25);background:rgba(255,255,255,.03);color:#d4dae2;border-radius:999px;padding:8px 14px;cursor:pointer}
-@media(max-width:1050px){.home-arena{grid-template-columns:1fr 310px}.arena-wheel-panel{display:none}.arena-top{grid-template-columns:auto 1fr auto}.arena-brand{min-width:0}.arena-side-panel{grid-column:2}.arena-center{grid-column:1}.arena-hero-panel{grid-template-columns:1fr 150px 1fr}}
-@media(max-width:760px){.screen#s-home{padding:70px 8px 24px}.home-arena{display:flex;flex-direction:column;padding:8px 2px 28px;gap:12px}.arena-top{display:flex;flex-direction:column;gap:10px;padding:4px 2px 12px}.arena-brand{order:1;width:100%;padding:12px 30px}.arena-brand h1{font-size:2rem}.arena-actions{order:0;width:100%;justify-content:center}.arena-status{order:2}.arena-center,.arena-side-panel{width:100%}.arena-gauges{grid-template-columns:repeat(2,1fr);gap:12px}.gauge{aspect-ratio:1/.72}.arena-tabs{overflow-x:auto}.arena-tab{padding:10px 13px;font-size:.72rem}.arena-hero-panel{grid-template-columns:1fr;min-height:0}.hero-trophy{height:130px;order:-1}.arena-footer{flex-direction:column;gap:10px}.home-quickbar{top:8px}}
 </style>
 </head>
 <body>
@@ -404,70 +377,70 @@ button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:tr
 
 <!-- HOME -->
 <div id="s-home" class="screen active">
-  <div class="home-arena">
-    <div class="arena-top">
-      <div class="arena-status"><span class="arena-dot"></span><span id="arenaLiveText">تۆرنمێنت چالاکە</span></div>
-      <div class="arena-brand"><h1>QUIZ ARENA</h1><p>کۆنتیست — ئۆنلاین</p></div>
-      <div class="arena-actions">
-        <button class="arena-icon" onclick="toggleMusic()" title="Music">🎵</button>
-        <button class="arena-icon" onclick="openQuickDashboard()" title="Dashboard">👤</button>
-        <button class="arena-icon" onclick="toggleNotifications(event)" title="Notifications">🔔</button>
-        <button class="arena-icon" onclick="openTournamentBracket()" title="Bracket">🏆</button>
-      </div>
+  <div class="logo">
+    <h1>QUIZ GAME</h1>
+    <p>کوئیز گەیم — ئۆنلاین</p>
+  </div>
+
+  <div class="online-pill">
+    <span class="dot-live"></span>
+    <span id="onlineCount"><strong>—</strong> ئۆنلاین ئێستا</span>
+  </div>
+
+  <div class="cd-card" id="cdCard">
+    <div class="cd-eyebrow">یاری داهاتوو</div>
+    <div class="cd-nextday" id="cdNextDay">—</div>
+    <div class="cd-grid" id="cdGrid">
+      <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-lbl">ڕۆژ</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cdH">00</div><div class="cd-lbl">کاژێر</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cdM">00</div><div class="cd-lbl">خولەک</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cdS">00</div><div class="cd-lbl">چرکە</div></div>
     </div>
+    <div class="cd-live-badge" id="cdLiveBadge">🔴 یاری ئێستا چالاکە<span class="pulse-ring"></span></div>
+    <div class="cd-off-badge" id="cdOffBadge">😴 ئەمشەو هەینییە — یاری نییە</div>
+    <div class="week-strip" id="weekStrip"></div>
+  </div>
 
-    <aside class="arena-wheel-panel">
-      <div class="category-wheel">
-        <span class="wheel-icon wi1">🏛️</span><span class="wheel-icon wi2">🧪</span><span class="wheel-icon wi3">🏆</span><span class="wheel-icon wi4">😊</span>
-        <span class="wheel-icon wi5">🎭</span><span class="wheel-icon wi6">📚</span><span class="wheel-icon wi7">🚀</span><span class="wheel-icon wi8">⚛️</span>
-        <div class="wheel-core">پرسیاری<br>ئەمشەو<br>🎯</div>
-      </div>
-    </aside>
+  <div class="announce-banner" id="announceBanner" style="display:none"></div>
 
-    <main class="arena-center">
-      <div class="arena-gauges">
-        <div class="gauge"><div class="num" id="arenaPlayers">32</div><div class="lbl">یاریزان</div></div>
-        <div class="gauge"><div class="num" id="arenaRound">32</div><div class="lbl">دەور</div></div>
-        <div class="gauge"><div class="num" id="arenaLive">0</div><div class="lbl">چالاک</div></div>
-        <div class="gauge"><div class="num" id="arenaNext">00:00</div><div class="lbl">دەوری داهاتوو</div></div>
-      </div>
-      <div class="arena-clock" id="arenaClock">ئەمشەو — ٩:٠٠ PM</div>
-      <div class="arena-tabs">
-        <button class="arena-tab active" onclick="openTournamentBracket()">Live Matches</button>
-        <button class="arena-tab" onclick="openTournamentBracket()">Round 32</button>
-        <button class="arena-tab" onclick="openTournamentBracket()">Round 16</button>
-        <button class="arena-tab" onclick="openTournamentBracket()">Quarter Final</button>
-        <button class="arena-tab" onclick="openTournamentBracket()">Semi Final</button>
-        <button class="arena-tab" onclick="openTournamentBracket()">Final</button>
-      </div>
-      <div class="arena-hero-panel">
-        <div class="hero-side"><div class="hero-icon">🤖</div><div class="hero-title">قەهرەمانی پێشوو</div><div class="hero-name" id="homeChampionName">—</div></div>
-        <div class="hero-trophy"><span>🏆</span></div>
-        <div class="hero-side"><div class="hero-icon">⚡</div><div class="hero-title">ئامادەی یاریکردنیت؟</div><div class="hero-name">ئێستا بچۆ ناو یاری</div><button class="btn btn-gold" style="margin-top:10px;width:100%;padding:11px 10px" onclick="joinLobby()">🎮 Play Now</button></div>
-      </div>
-      <div class="tourney-home-card" id="homeTournamentCard" style="display:none">
-        <div class="tourney-home-head"><h3>🏆 تۆرنمێنتی ئەمشەو</h3><span id="homeTournamentRound">—</span></div>
-        <div class="mini-bracket" id="homeMiniBracket"></div>
-        <div class="tourney-home-actions"><button class="btn btn-gold" onclick="openTournamentBracket()">🏆 بینینی براکەت</button></div>
-      </div>
-      <div class="mwrap" id="homeAuthBtns" style="max-width:none;display:flex;flex-direction:row;justify-content:center">
-        <button class="btn btn-gold" onclick="go('s-login')">🔑 چوونەژوورەوە</button>
-        <button class="btn btn-ghost" onclick="go('s-register')">✨ خۆتۆمارکردن</button>
-      </div>
-      <div id="homeUserBtns" style="display:none" aria-hidden="true"><span id="miniName">—</span><span id="miniTrophies">0</span><span id="miniGames">0</span><span id="miniWins">0</span></div>
-      <div class="note" id="homeNote">یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.</div>
-    </main>
+  <div class="champ-banner" id="champBanner" style="display:none">
+    <div class="ce">🏆</div>
+    <div>براوەی ئەمشەو</div>
+    <div class="cn" id="champName">—</div>
+  </div>
 
-    <aside class="arena-side-panel">
-      <div class="panel-title"><span>🔴 LIVE MATCHES</span><small id="homeLiveCount">0</small></div>
-      <div class="live-list" id="homeLiveMatches"><div class="mini-empty">چاوەڕوانی یاری...</div></div>
-      <button class="btn btn-gold view-bracket" onclick="openTournamentBracket()">🏆 VIEW BRACKET</button>
-      <div class="arena-info"><div class="panel-title">TOURNAMENT INFO</div><p>• جۆر: <strong>Single Elimination</strong></p><p>• کۆی یاریزان: <strong>32</strong></p><p>• بۆتەکان: <strong>auto</strong></p><p>• Random 1v1 pairing</p></div>
-      <div class="arena-profile" id="arenaProfile" style="display:none"><div class="profile-line"><div class="profile-avatar">🎮</div><div><div class="profile-name" id="arenaProfileName">—</div><div class="profile-sub">یاریزانی Quiz Arena</div></div></div><div class="profile-stats"><div class="profile-stat"><b id="arenaProfileGames">0</b><span>یاری</span></div><div class="profile-stat"><b id="arenaProfileWins">0</b><span>بردنەوە</span></div><div class="profile-stat"><b id="arenaProfileAccuracy">0%</b><span>دروست</span></div></div></div>
-    </aside>
-    <div class="arena-footer"><span>© QUIZ ARENA — ONLINE TOURNAMENT</span><div class="arena-footer-actions"><button onclick="toggleMusic()">🎵 Music</button><button onclick="openTournamentBracket()">🏆 Bracket</button></div></div>
+  <div class="mwrap" id="joinRoomWrap" style="display:none;margin-bottom:14px">
+    <button class="btn btn-red" id="joinRoomBtn" onclick="joinLobby()">🎮 &nbsp; چوونە ژووری یاری ئەمشەو</button>
+  </div>
+
+  <div class="mwrap" id="homeAuthBtns">
+    <button class="btn btn-gold" onclick="go('s-login')">🔑 &nbsp; چوونەژوورەوە</button>
+    <button class="btn btn-ghost" onclick="go('s-register')">✨ &nbsp; خۆتۆمارکردن</button>
+  </div>
+
+  <!-- The detailed dashboard is intentionally opened from the top circular profile button. -->
+  <div id="homeUserBtns" style="display:none" aria-hidden="true">
+    <span id="miniName">—</span><span id="miniTrophies">0</span><span id="miniGames">0</span><span id="miniWins">0</span>
+  </div>
+
+
+  <!-- LIVE TOURNAMENT PREVIEW: visible to everyone on the home page -->
+  <div class="tourney-home-card" id="homeTournamentCard" style="display:none">
+    <div class="tourney-home-head">
+      <h3>🏆 تۆرنمێنتی ئەمشەو</h3>
+      <span id="homeTournamentRound">—</span>
+    </div>
+    <div class="mini-bracket" id="homeMiniBracket"></div>
+    <div class="tourney-home-actions">
+      <button class="btn btn-gold" onclick="openTournamentBracket()">🏆 بینینی براکەت</button>
+    </div>
+  </div>
+
+  <div class="note" id="homeNote">
+    یاری هەموو شەوێک کاتژمێر ٩ی شەو دەستپێدەکات، جگە لە هەینی.
   </div>
 </div>
+
 
 <!-- PROFESSIONAL TOURNAMENT BRACKET -->
 <div id="s-bracket" class="screen">
@@ -1355,23 +1328,7 @@ async function updateTournamentHomePreview(){
       return `<div class="mini-col"><div class="mini-col-title">${BRACKET_LABELS[r]}</div>${shown.join('')}</div>`;
     }).join('');
   }catch(e){console.warn('home bracket preview',e)}
-  updateArenaHomeStats();
 }
-async function updateArenaHomeStats(){
-  try{
-    const t=await getTournamentSnapshot(); const round=String(t?.currentRound||"32");
-    const ms=roundMatches(t,round)||{}; const vals=Object.values(ms); const live=vals.filter(m=>m?.status==="live").length;
-    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-    set("arenaRound",round); set("arenaLive",live); set("arenaPlayers",vals.length?Math.min(32,vals.length*2):32); set("homeLiveCount",live);
-    set("arenaLiveText",t?.state==="finished"?"تۆرنمێنت تەواوبوو":(live?"یارییەکان چالاکن":"تۆرنمێنت چاوەڕوانە"));
-    const list=document.getElementById("homeLiveMatches"); const shown=vals.filter(m=>m?.status==="live"||m?.status==="waiting").slice(0,4);
-    if(list) list.innerHTML=shown.length ? shown.map(m=>`<div class="live-match"><div class="live-row"><span>${m.players?.[0]?.isBot?'🤖 ':'👤 '}${escapeHTML(playerName(m.players?.[0]))}</span><span class="live-vs">VS</span><span>${m.players?.[1]?.isBot?'🤖 ':'👤 '}${escapeHTML(playerName(m.players?.[1]))}</span></div><span class="live-state ${m.status==='waiting'?'wait':''}">${m.status==='live'?'● LIVE NOW':'⌛ WAITING'}</span></div>`).join('') : '<div class="mini-empty">هێشتا یارییەکی چالاک نییە.</div>';
-    if(t?.champion) set("homeChampionName",t.champion.username||"—");
-  }catch(e){console.warn("arena home stats",e)}
-  const prof=document.getElementById("arenaProfile"),s=currentSession;
-  if(prof&&s){prof.style.display="block";document.getElementById("arenaProfileName").textContent=s.username||"—";try{const snap=await rtdb.ref("users/"+safeKey(s.phone)).once("value"),u=snap.val()||{},c=Number(u.correctAnswers)||0,w=Number(u.wrongAnswers)||0;document.getElementById("arenaProfileGames").textContent=u.gamesPlayed||0;document.getElementById("arenaProfileWins").textContent=u.wins||0;document.getElementById("arenaProfileAccuracy").textContent=(c+w?Math.round(c/(c+w)*100):0)+"%";}catch(_){}}else if(prof)prof.style.display="none";
-}
-setInterval(updateArenaHomeStats,5000);
 function openTournamentBracket(){ go('s-bracket'); renderTournamentBracket(); }
 
 async function incrementUserCounter(phone,field,amount=1){try{await rtdb.ref("users/"+safeKey(phone)+"/"+field).transaction(v=>(Number(v)||0)+amount)}catch(e){console.warn("incrementUserCounter",field,e)}}
