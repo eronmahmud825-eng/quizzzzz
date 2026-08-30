@@ -369,9 +369,32 @@ button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:tr
 @media(max-width:420px){.home-quickbar .circle-btn{width:41px;height:41px;font-size:.95rem}.home-quickbar{gap:4px}.cd-grid{display:grid!important;grid-template-columns:1fr 1fr}.cd-unit{max-width:none;min-width:0}.bracket-board{min-width:850px}.bracket-card{min-width:155px}.bracket-player{font-size:.64rem}.match-agrid{grid-template-columns:1fr}.dash-actions{display:grid;grid-template-columns:1fr}.dash-actions .btn{width:100%}}
 
 .match-q{user-select:none;-webkit-user-select:none}.match-timer .tn{font-variant-numeric:tabular-nums;min-width:2ch;text-align:center}.match-status{min-height:22px}
+
+/* PROFESSIONAL ROUND TRANSITION */
+.round-transition{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,4,10,.88);backdrop-filter:blur(18px)}
+.round-transition.show{display:flex;animation:rtFade .25s ease}
+@keyframes rtFade{from{opacity:0}to{opacity:1}}
+.rt-box{width:min(920px,100%);max-height:92vh;overflow:auto;border:1px solid rgba(240,180,41,.35);border-radius:28px;background:linear-gradient(145deg,rgba(25,27,40,.98),rgba(8,10,20,.98));box-shadow:0 30px 100px rgba(0,0,0,.65),0 0 80px rgba(124,58,237,.16);padding:26px;text-align:center}
+.rt-kicker{color:var(--gold);font-family:Oxanium,sans-serif;font-weight:800;letter-spacing:3px;font-size:.8rem}.rt-title{font-size:clamp(1.5rem,5vw,2.5rem);font-weight:900;margin:6px 0}.rt-sub{color:var(--muted);font-size:.9rem}.rt-count{font-family:Oxanium,sans-serif;font-size:clamp(3rem,12vw,6rem);font-weight:900;color:var(--gold);line-height:1;margin:15px 0;text-shadow:0 0 35px rgba(240,180,41,.35)}
+.rt-progress{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:0 auto 20px;max-width:640px}.rt-progress i{display:block;height:100%;width:100%;transform-origin:right;background:linear-gradient(90deg,var(--purple),var(--gold));animation:rtBar 10s linear forwards}@keyframes rtBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.rt-winners{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}.rt-player{padding:9px 13px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-weight:800;animation:rtPlayer .5s both}.rt-player:nth-child(2n){animation-delay:.08s}.rt-player:nth-child(3n){animation-delay:.16s}@keyframes rtPlayer{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:none}}
+.rt-bracket-note{margin-top:16px;color:#c9c9d4;font-size:.8rem}
+@media(max-width:600px){.rt-box{padding:20px 13px;border-radius:20px}.rt-winners{gap:6px}.rt-player{font-size:.72rem;padding:8px 9px}}
 </style>
 </head>
 <body>
+<div class="round-transition" id="roundTransition" aria-live="polite">
+  <div class="rt-box">
+    <div class="rt-kicker" id="rtKicker">QUIZ ARENA • QUALIFIED</div>
+    <div class="rt-title" id="rtTitle">دەوری نوێ</div>
+    <div class="rt-sub" id="rtSub">یاریزانە براوەکان دەچنە بڕاکەت...</div>
+    <div class="rt-count" id="rtCount">10</div>
+    <div class="rt-progress"><i id="rtProgress"></i></div>
+    <div class="rt-winners" id="rtWinners"></div>
+    <div class="rt-bracket-note">🏆 براکەت نوێ دەکرێتەوە • 🎲 1v1 ـەکان بە شێوەی ڕەندۆم</div>
+  </div>
+</div>
+
 <div class="home-quickbar" id="homeQuickBar"><span class="home-quick-label">QUIZ ARENA</span><button class="circle-btn" id="quickProfileBtn" title="Dashboard" onclick="openQuickDashboard()">👤</button><button class="circle-btn" id="quickNotifBtn" title="Notifications" onclick="toggleNotifications(event)">🔔<span class="quick-badge" id="quickNotifBadge" style="display:none">0</span></button><button class="circle-btn" id="quickMusicBtn" title="Music" onclick="toggleMusic()">🎵</button></div><div class="notif-panel" id="notifPanel"><div class="notif-head"><strong>🔔 ئاگادارکردنەوەکان</strong><button onclick="clearAppNotifications()">پاککردنەوە</button></div><div class="notif-list" id="notifList"><div class="notif-empty">هێشتا هیچ ئاگادارکردنەوەیەک نییە.</div></div></div>
 
 
@@ -682,38 +705,84 @@ function otpMove(i, e) {
 //  phone number, no name is kept on the device anymore).
 // ═══════════════════════════════════════════════════════
 const TOKEN_KEY = "quiz_session_token";
-let currentSession = null; // {phone, username, token} — cached in memory after boot
+const TAB_SESSION_KEY = "quiz_active_session_token";
+let currentSession = null; // {phone, username, token, tabId}
 
 function genToken() {
   return "s_" + Date.now() + "_" + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
 }
+function sessionTabId(){ return myTabId ? myTabId() : (sessionStorage.getItem("quiz_tab_id") || ("t_"+Date.now()+"_"+Math.random().toString(36).slice(2,8))); }
+function sessionError(msg){ const e=new Error(msg||"ACCOUNT_IN_USE"); e.code="ACCOUNT_IN_USE"; return e; }
 
-async function saveSession(user) {
-  const token = genToken();
-  await fbPut("/sessions/" + token, { phone: user.phone, username: user.username, createdAt: Date.now() });
-  localStorage.setItem(TOKEN_KEY, token);
-  currentSession = { phone: user.phone, username: user.username, token };
+// One account = one active browser tab. The token is kept in sessionStorage
+// so a refresh keeps the same login, while a new tab gets a different token.
+// Firebase's onDisconnect releases the account automatically when that tab
+// really disconnects.
+async function saveSession(user, existingToken=null) {
+  const token = existingToken || genToken();
+  const tabId = sessionTabId();
+  const activeRef = rtdb.ref("activeSessions/" + safeKey(user.phone));
+  const claim = await activeRef.transaction(cur => {
+    if (!cur) return { token, tabId, username:user.username, startedAt:firebase.database.ServerValue.TIMESTAMP };
+    if (cur.token === token && cur.tabId === tabId) return;
+    return;
+  });
+  if (!claim.committed) throw sessionError("ACCOUNT_IN_USE");
+  await fbPut("/sessions/" + token, { phone: user.phone, username: user.username, tabId, createdAt: Date.now() });
+  sessionStorage.setItem(TAB_SESSION_KEY, token);
+  sessionStorage.setItem(TOKEN_KEY, token);
+  localStorage.removeItem(TOKEN_KEY); // migrate old builds away from shared-tab storage
+  const disconnectRef = rtdb.ref("activeSessions/" + safeKey(user.phone));
+  try {
+    await disconnectRef.onDisconnect().remove();
+  } catch (_) {}
+  currentSession = { phone: user.phone, username: user.username, token, tabId };
 }
 
 async function clearSession() {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TAB_SESSION_KEY) || localStorage.getItem(TOKEN_KEY);
+  const phone = currentSession && currentSession.phone;
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TAB_SESSION_KEY);
   localStorage.removeItem(TOKEN_KEY);
   currentSession = null;
   if (token) { try { await fbDelete("/sessions/" + token); } catch (e) {} }
+  if(phone){
+    try {
+      await rtdb.ref("activeSessions/"+safeKey(phone)).transaction(cur => cur && cur.token===token ? null : undefined);
+    } catch(_){}
+  }
 }
 
 // Runs once on page load: resolves the local token against Firebase
 // to rebuild the session, then paints the UI. Everything else in the
 // app reads the already-resolved `currentSession` synchronously.
 async function bootSession() {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TAB_SESSION_KEY) || localStorage.getItem(TOKEN_KEY);
   if (!token) { currentSession = null; applySessionUI(); return; }
   try {
     const rec = await fbGet("/sessions/" + token);
-    if (rec) currentSession = { phone: rec.phone, username: rec.username, token };
-    else { localStorage.removeItem(TOKEN_KEY); currentSession = null; }
+    if (rec) {
+      const active = await fbGet("/activeSessions/" + safeKey(rec.phone));
+      if (active && active.token !== token) {
+        sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TAB_SESSION_KEY); localStorage.removeItem(TOKEN_KEY);
+        currentSession = null;
+        notif("ئەم هەژمارە لە tab ـێکی تر بەکاردێت", "err");
+      } else {
+        try {
+          await saveSession({phone:rec.phone, username:rec.username}, token);
+        } catch (_) {
+          currentSession = { phone:rec.phone, username:rec.username, token, tabId:rec.tabId||sessionTabId() };
+        }
+      }
+    } else {
+      sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TAB_SESSION_KEY); localStorage.removeItem(TOKEN_KEY); currentSession = null;
+    }
   } catch (e) {
-    currentSession = null; // network hiccup — user just sees the login screen this once
+    // Keep the local session during a temporary network outage; Firebase listeners
+    // will reconnect and the account lock is not treated as a logout.
+    const cached = sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TAB_SESSION_KEY);
+    if(!cached) currentSession = null;
   }
   applySessionUI();
 }
@@ -774,6 +843,13 @@ async function doRegister() {
       document.getElementById("rgPhoneMsg").textContent = "ئەم ژمارەیە پێشتر تۆمارکراوە";
       btn.disabled = false; btn.textContent = "خۆتۆمارکردن"; return;
     }
+    const usernameKey = encodeURIComponent(name.toLocaleLowerCase().trim()).replace(/\./g,"%2E");
+    const nameRef = rtdb.ref("usernameIndex/" + usernameKey);
+    const nameClaim = await nameRef.transaction(cur => cur ? undefined : phone);
+    if (!nameClaim.committed) {
+      document.getElementById("rgNameMsg").textContent = "ئەم ناوە پێشتر بەکارهاتووە — ناوێکی تر هەڵبژێرە";
+      btn.disabled = false; btn.textContent = "خۆتۆمارکردن"; return;
+    }
     const passHash = await sha256(pass);
     const userObj = {
       username: name, passHash,
@@ -792,7 +868,8 @@ async function doRegister() {
     btn.disabled = false; btn.textContent = "خۆتۆمارکردن";
     return;
   } catch (e) {
-    notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
+    if(e && e.code === "ACCOUNT_IN_USE") document.getElementById("rgNameMsg").textContent = "ئەم هەژمارە لە tab ـێکی تر بەکاردێت";
+    else notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
   }
   btn.disabled = false; btn.textContent = "خۆتۆمارکردن";
 }
@@ -827,7 +904,8 @@ async function doLogin() {
     btn.disabled = false; btn.textContent = "چوونەژوورەوە";
     return;
   } catch (e) {
-    notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
+    if(e && e.code === "ACCOUNT_IN_USE") document.getElementById("loPhoneMsg").textContent = "ئەم هەژمارە لە tab ـێکی تر چووەتە ژوورەوە";
+    else notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
   }
   btn.disabled = false; btn.textContent = "چوونەژوورەوە";
 }
@@ -2281,6 +2359,136 @@ function startSpectate() {
   specUnsub = () => ref.off("value", handler);
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  FINAL LIVE TOURNAMENT ROUTER + ROUND TRANSITION ENGINE
+// ═══════════════════════════════════════════════════════════════════════
+let liveRouterUnsub=null, roundTransitionKey=null, roundTransitionTimer=null, roundTransitionActive=false;
+function roundStartMs(t){ return Number(t && t.roundStartAt) || 0; }
+function roundLabel(r){ return BRACKET_LABELS[String(r)] || ("دەوری "+r); }
+function showRoundTransition(t, fromRound){
+  const round=String(t.currentRound||""); if(!round) return Promise.resolve();
+  const startAt=roundStartMs(t) || (serverNow()+10000);
+  const key=round+"/"+startAt;
+  if(roundTransitionKey===key && roundTransitionActive) return Promise.resolve();
+  roundTransitionKey=key; roundTransitionActive=true;
+  const overlay=document.getElementById("roundTransition"), countEl=document.getElementById("rtCount"), winnersEl=document.getElementById("rtWinners");
+  document.getElementById("rtTitle").textContent=fromRound?roundLabel(fromRound)+" → "+roundLabel(round):roundLabel(round);
+  document.getElementById("rtSub").textContent=fromRound?"یاریزانە براوەکان بۆ دەوری داهاتوو گواسترایەوە":"براکەت ئامادە دەکرێت";
+  winnersEl.innerHTML="";
+  const ms=roundMatches(t,round);
+  Object.values(ms).forEach(m=>(m.players||[]).forEach(p=>{ if(p) { const d=document.createElement("div"); d.className="rt-player"; d.textContent=(p.isBot?"🤖 ":"👤 ")+playerName(p); winnersEl.appendChild(d); }}));
+  overlay.classList.add("show");
+  clearInterval(roundTransitionTimer);
+  const tick=()=>{
+    const left=Math.max(0,Math.ceil((startAt-serverNow())/1000));
+    countEl.textContent=left;
+    if(left<=0){ clearInterval(roundTransitionTimer); roundTransitionActive=false; overlay.classList.remove("show"); routeCurrentPlayerLive(true); }
+  };
+  tick(); roundTransitionTimer=setInterval(tick,100);
+}
+async function routeCurrentPlayerLive(force=false){
+  const s=currentSession; if(!s) return;
+  try{
+    const t=await getTournamentSnapshot(); if(!t || !t.currentRound || !String(t.state||"").startsWith("round_")) return;
+    const round=String(t.currentRound), startAt=roundStartMs(t);
+    const matches=roundMatches(t,round);
+    let mine=null, matchId=null;
+    for(const [id,m] of Object.entries(matches)){ if((m.players||[]).some(p=>p.phone===s.phone)){mine=m;matchId=id;break;} }
+    if(!mine) return;
+    if(startAt && serverNow()<startAt){ if(!roundTransitionActive) showRoundTransition(t); return; }
+    if(roundTransitionActive && !force) return;
+    if(mine.status==='live' || mine.status==='resolving'){
+      if(mine.qStartAt && mine.question && serverNow() >= Number(mine.qStartAt)+(Number(mine.question.timeSeconds)||19)*1000+250){ await tryResolveMatch(round,matchId); return; }
+      openMatch(round,matchId,mine);
+    } else if(mine.status==='waiting' || mine.status==='activating'){
+      openMatch(round,matchId,mine);
+    } else if(mine.status==='done'){
+      if(mine.winnerPhone===s.phone){ go("s-wait-round"); document.getElementById("waitRoundSub").textContent="دەوری داهاتوو بەم زوانە دەستپێدەکات..."; }
+      else handleMatchDone(round,matchId,mine);
+    }
+  }catch(e){console.warn("routeCurrentPlayerLive",e)}
+}
+function startLiveTournamentRouter(){
+  if(liveRouterUnsub) liveRouterUnsub();
+  const ref=rtdb.ref("tournament");
+  let lastRound=null;
+  const handler=async snap=>{
+    const t=snap.val(); liveTournamentState=t&&t.state||"idle";
+    if(!currentSession || !t) return;
+    if(t.state==='finished'){ if(activeScreenId()==='s-lobby') go('s-home'); return; }
+    if(!String(t.state||"").startsWith("round_")) return;
+    const round=String(t.currentRound||"");
+    if(lastRound!==round){ const old=lastRound; lastRound=round; showRoundTransition(t,old); }
+    await routeCurrentPlayerLive();
+  };
+  ref.on("value",handler); liveRouterUnsub=()=>ref.off("value",handler);
+}
+
+// A refresh/new connection immediately resumes the authoritative match; it
+// never treats an empty lobby as an admin kick once the bracket has started.
+window.addEventListener("online",()=>{syncServerClock().then(()=>routeCurrentPlayerLive(true))});
+
+// Add a shared 10-second start timestamp to every newly created round.
+// The existing round-advance logic is overridden below so all clients see
+// the same countdown and the same bracket before matches become LIVE.
+const _oldMaybeAdvanceRound = maybeAdvanceRound;
+maybeAdvanceRound = async function(round){
+  const roundRef=rtdb.ref("tournament/matches/round_"+round);
+  const snap=await roundRef.once("value"), matches=snap.val()||{}, ids=Object.keys(matches);
+  if(!ids.length || !ids.every(id=>matches[id]&&matches[id].status==='done')) return;
+  const lock=await rtdb.ref("tournament/advancing_"+round).transaction(cur=>cur?undefined:true);
+  if(!lock.committed) return;
+  let winners=ids.map(id=>matches[id].players&&matches[id].players.find(p=>p.phone===matches[id].winnerPhone)).filter(Boolean);
+  if(round==='2'){ const champion=winners[0]; if(!champion)return; await rtdb.ref("tournament").update({state:"finished",champion:{phone:champion.phone,username:champion.username}}); await rtdb.ref("tournament_history/"+todayStr()).set({champion:{phone:champion.phone,username:champion.username},finishedAt:SRV_TS}); if(!champion.isBot){try{await rtdb.ref("users/"+safeKey(champion.phone)+"/trophies").transaction(v=>(Number(v)||0)+1);await rtdb.ref("users/"+safeKey(champion.phone)+"/championships").transaction(v=>(Number(v)||0)+1)}catch(_){}} return; }
+  const nextRound=ROUND_SEQUENCE[ROUND_SEQUENCE.indexOf(round)+1]; if(!nextRound||winners.length<2)return;
+  winners.sort(()=>Math.random()-.5);
+  const nextMatches={}; for(let i=0;i<winners.length;i+=2) nextMatches["m"+(i/2)]={players:[winners[i],winners[i+1]],status:"waiting",question:null,qStartAt:null,answers:{},winnerPhone:null,resolvedAt:null};
+  const startAt=serverNow()+10000;
+  await rtdb.ref("tournament").update({state:"round_"+nextRound,currentRound:nextRound,roundRevealAt:SRV_TS,roundStartAt:startAt,["matches/round_"+nextRound]:nextMatches});
+  // Activation is intentionally delayed until roundStartAt.
+  await activateRoundMatches(nextRound);
+};
+
+// Override activation so every client waits for the SAME roundStartAt.
+const _oldActivateRoundMatches = activateRoundMatches;
+activateRoundMatches = async function(round){
+  const t=await getTournamentSnapshot();
+  if(t && String(t.currentRound)===String(round) && t.roundStartAt && serverNow()<Number(t.roundStartAt)) return;
+  return _oldActivateRoundMatches(round);
+};
+
+// Override hard bot fallback so bots also respect the 10-second public bracket animation.
+const _oldForceBots = forceFinishWaitingBotMatches;
+forceFinishWaitingBotMatches = async function(round){
+  const t=await getTournamentSnapshot();
+  if(t && String(t.currentRound)===String(round) && t.roundStartAt && serverNow()<Number(t.roundStartAt)) return;
+  return _oldForceBots(round);
+};
+
+// Override watchdog activation gate; after the countdown it is safe to self-heal.
+const _oldWatchdogTick = watchdogTick;
+watchdogTick = async function(){
+  const t=await getTournamentSnapshot();
+  if(t && t.currentRound && t.roundStartAt && serverNow()<Number(t.roundStartAt)) return;
+  return _oldWatchdogTick();
+};
+
+// Initial Round 32 also gets the same 10-second reveal.
+const _oldGenerateBracketFromLobby = generateBracketFromLobby;
+generateBracketFromLobby = async function(){
+  const lobbySnap=await rtdb.ref("tournament/lobby").once("value"), lobbyVal=lobbySnap.val()||{};
+  const allJoined=Object.values(lobbyVal).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
+  const qualifiedRaw=allJoined.slice(0,32), overflow=allJoined.slice(32);
+  let players=qualifiedRaw.map(p=>({phone:p.phone,username:p.username,isBot:false})).sort(()=>Math.random()-.5);
+  let botN=0; while(players.length<32){botN++;players.push({phone:"bot_"+Date.now()+"_"+botN,username:"🤖 یاریزانی مەکینە "+botN,isBot:true})}
+  const matches={}; for(let i=0;i<16;i++)matches["m"+i]={players:[players[i*2],players[i*2+1]],status:"waiting",question:null,qStartAt:null,answers:{},winnerPhone:null,resolvedAt:null};
+  const overflowMap={}; overflow.forEach(p=>overflowMap[safeKey(p.phone)]={username:p.username});
+  await rtdb.ref("tournament").update({state:"round_32",currentRound:"32",champion:null,startedAt:SRV_TS,roundRevealAt:SRV_TS,roundStartAt:serverNow()+10000,"matches/round_32":matches,lobby:null,overflow:overflowMap});
+};
+
+// Ensure the global live router is attached after Firebase is ready.
+setTimeout(()=>{try{startLiveTournamentRouter()}catch(e){console.warn(e)}},300);
+
 // ═══════════════════════════════════════════════════════
 //  NOTIF + BOOT
 // ═══════════════════════════════════════════════════════
@@ -2293,7 +2501,7 @@ function notif(msg, type) {
 (async function bootApp(){
   try { await syncServerClock(); } catch (_) {}
   await bootSession();
-  try { refreshHomeTourneyUI(); updateTournamentHomePreview(); resumeTournamentAfterRefresh(); } catch(e) {}
+  try { refreshHomeTourneyUI(); updateTournamentHomePreview(); resumeTournamentAfterRefresh(); routeCurrentPlayerLive(true); } catch(e) {}
 })();
 </script>
 </body>
