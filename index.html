@@ -654,7 +654,7 @@ button,.btn,.circle-btn{touch-action:manipulation;-webkit-tap-highlight-color:tr
 </div>
 
 <!-- DASHBOARD -->
-<div id="s-dashboard" class="screen top"><div class="dash-shell"><button class="bk" onclick="go('s-home')">← ماڵەوە</button><div class="dash-head"><div class="avatar" id="dashAvatar">🎮</div><div class="dash-name" id="dashName">—</div><div class="dash-phone" id="dashPhone">—</div></div><div class="dash-actions"><button class="btn btn-gold" onclick="go('s-home')">🏠 گەڕانەوە بۆ ماڵەوە</button><button class="btn btn-ghost" onclick="renderDashboard()">🔄 نوێکردنەوە</button></div><div class="dash-stat-grid"><div class="dash-big-stat"><div class="icon">🎮</div><div class="value" id="dashTournamentPlayed">0</div><div class="label">تۆرنمێنتی بەشداری تێدا کردوویت</div></div><div class="dash-big-stat"><div class="icon">✅</div><div class="value" id="dashCorrect">0</div><div class="label">پرسیاری ڕاست وەڵامدراو</div></div><div class="dash-big-stat"><div class="icon">❌</div><div class="value" id="dashWrong">0</div><div class="label">پرسیاری هەڵە وەڵامدراو</div></div><div class="dash-big-stat"><div class="icon">🏆</div><div class="value" id="dashChampionships">0</div><div class="label">براوەی تۆرنمێنت</div></div></div><div class="dash-summary"><div class="dash-summary-card"><h3>🏅 مۆدال</h3><p><strong id="dashTrophies">0</strong> مۆدال تاکوو ئێستا</p></div><div class="dash-summary-card"><h3>⚔️ یارییەکانی 1v1</h3><p><strong id="dashGames">0</strong> یاری — <strong id="dashWins">0</strong> بردنەوە</p></div></div><div class="dash-note">💡 داشبۆردی تایبەتی یاریزان: تۆرنمێنت، وەڵامی ڕاست، وەڵامی هەڵە و ژمارەی قەهرەمانییەکان.</div><div class="hist-wrap"><div class="hist-title">مێژووی یاریەکان</div><div id="histList"><div class="hist-empty">هێشتا هیچ یارییەک نەکراوە.</div></div></div></div></div><div class="notif" id="notif"></div>
+<div id="s-dashboard" class="screen top"><div class="dash-shell"><button class="bk" onclick="go('s-home')">← ماڵەوە</button><div class="dash-head"><div class="avatar" id="dashAvatar">🎮</div><div class="dash-name" id="dashName">—</div><div class="dash-phone" id="dashPhone">—</div></div><div class="dash-actions"><button class="btn btn-gold" onclick="go('s-home')">🏠 گەڕانەوە بۆ ماڵەوە</button><button class="btn btn-ghost" onclick="renderDashboard()">🔄 نوێکردنەوە</button><button class="btn btn-red" onclick="doLogout()">🚪 چوونەدەرەوە</button></div><div class="dash-stat-grid"><div class="dash-big-stat"><div class="icon">🎮</div><div class="value" id="dashTournamentPlayed">0</div><div class="label">تۆرنمێنتی بەشداری تێدا کردوویت</div></div><div class="dash-big-stat"><div class="icon">✅</div><div class="value" id="dashCorrect">0</div><div class="label">پرسیاری ڕاست وەڵامدراو</div></div><div class="dash-big-stat"><div class="icon">❌</div><div class="value" id="dashWrong">0</div><div class="label">پرسیاری هەڵە وەڵامدراو</div></div><div class="dash-big-stat"><div class="icon">🏆</div><div class="value" id="dashChampionships">0</div><div class="label">براوەی تۆرنمێنت</div></div></div><div class="dash-summary"><div class="dash-summary-card"><h3>🏅 مۆدال</h3><p><strong id="dashTrophies">0</strong> مۆدال تاکوو ئێستا</p></div><div class="dash-summary-card"><h3>⚔️ یارییەکانی 1v1</h3><p><strong id="dashGames">0</strong> یاری — <strong id="dashWins">0</strong> بردنەوە</p></div></div><div class="dash-note">💡 داشبۆردی تایبەتی یاریزان: تۆرنمێنت، وەڵامی ڕاست، وەڵامی هەڵە و ژمارەی قەهرەمانییەکان.</div><div class="hist-wrap"><div class="hist-title">مێژووی یاریەکان</div><div id="histList"><div class="hist-empty">هێشتا هیچ یارییەک نەکراوە.</div></div></div></div></div><div class="notif" id="notif"></div>
 
 <script>
 // fbGet / fbPut / fbDelete / sha256 / normPhone / safeKey / rtdb / SRV_TS /
@@ -718,30 +718,89 @@ function sessionError(msg){ const e=new Error(msg||"ACCOUNT_IN_USE"); e.code="AC
 // so a refresh keeps the same login, while a new tab gets a different token.
 // Firebase's onDisconnect releases the account automatically when that tab
 // really disconnects.
+let sessionHeartbeatI = null;
+let sessionLockUnsub = null;
+const SESSION_STALE_MS = 18000; // allows a closed/crashed tab to be reclaimed quickly
+
 async function saveSession(user, existingToken=null) {
   const token = existingToken || genToken();
   const tabId = sessionTabId();
   const activeRef = rtdb.ref("activeSessions/" + safeKey(user.phone));
+  const now = Date.now();
   const claim = await activeRef.transaction(cur => {
-    if (!cur) return { token, tabId, username:user.username, startedAt:firebase.database.ServerValue.TIMESTAMP };
-    if (cur.token === token && cur.tabId === tabId) return;
+    if (!cur) return { token, tabId, username:user.username, startedAt:firebase.database.ServerValue.TIMESTAMP, lastSeen:firebase.database.ServerValue.TIMESTAMP, disconnectedAt:null };
+    // Same tab/session (including refresh) is allowed to reclaim its own lock.
+    if (cur.token === token && cur.tabId === tabId) return { ...cur, username:user.username, lastSeen:firebase.database.ServerValue.TIMESTAMP, disconnectedAt:null };
+    // Firebase onDisconnect marks a closed tab. Also reclaim a genuinely stale
+    // lock in case the browser/network died before the disconnect update arrived.
+    const last = Number(cur.lastSeen || cur.startedAt || 0);
+    const stale = !!cur.disconnectedAt || (last > 0 && (now - last) > SESSION_STALE_MS);
+    if (stale) return { token, tabId, username:user.username, startedAt:cur.startedAt || firebase.database.ServerValue.TIMESTAMP, lastSeen:firebase.database.ServerValue.TIMESTAMP, disconnectedAt:null, reclaimedAt:firebase.database.ServerValue.TIMESTAMP };
     return;
   });
   if (!claim.committed) throw sessionError("ACCOUNT_IN_USE");
   await fbPut("/sessions/" + token, { phone: user.phone, username: user.username, tabId, createdAt: Date.now() });
   sessionStorage.setItem(TAB_SESSION_KEY, token);
   sessionStorage.setItem(TOKEN_KEY, token);
-  localStorage.removeItem(TOKEN_KEY); // migrate old builds away from shared-tab storage
+  localStorage.removeItem(TOKEN_KEY);
   const disconnectRef = rtdb.ref("activeSessions/" + safeKey(user.phone));
   try {
-    await disconnectRef.onDisconnect().remove();
+    // IMPORTANT: do NOT use onDisconnect().remove(). A closed old tab could
+    // otherwise delete the lock belonging to a newly logged-in tab. Mark it
+    // disconnected instead; the next login can safely reclaim it.
+    await disconnectRef.onDisconnect().update({ disconnectedAt: firebase.database.ServerValue.TIMESTAMP });
   } catch (_) {}
   currentSession = { phone: user.phone, username: user.username, token, tabId };
+  startSessionHeartbeat();
+  watchSessionLock();
+}
+
+function startSessionHeartbeat(){
+  clearInterval(sessionHeartbeatI);
+  if(!currentSession) return;
+  const beat = () => {
+    const s=currentSession; if(!s) return;
+    rtdb.ref("activeSessions/"+safeKey(s.phone)).transaction(cur => {
+      if(cur && cur.token===s.token && cur.tabId===s.tabId) return {...cur,lastSeen:firebase.database.ServerValue.TIMESTAMP,disconnectedAt:null};
+      return;
+    }).catch(()=>{});
+  };
+  beat();
+  sessionHeartbeatI=setInterval(beat,5000);
+}
+
+function watchSessionLock(){
+  if(sessionLockUnsub) sessionLockUnsub();
+  const s=currentSession; if(!s) return;
+  const ref=rtdb.ref("activeSessions/"+safeKey(s.phone));
+  const handler=snap=>{
+    const cur=snap.val();
+    if(!cur) return; // transient disconnect; don't log the user out
+    if(cur.token!==s.token || cur.tabId!==s.tabId){
+      clearInterval(sessionHeartbeatI);
+      sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TAB_SESSION_KEY);
+      currentSession=null;
+      if(sessionLockUnsub){sessionLockUnsub();sessionLockUnsub=null;}
+      applySessionUI();
+      if(IN_GAME_SCREENS.includes(activeScreenId())) go("s-home");
+      notif("ئەم هەژمارە لە tab ـێکی تر بەکارهێنراوە", "err");
+    }
+  };
+  ref.on("value",handler);
+  sessionLockUnsub=()=>ref.off("value",handler);
 }
 
 async function clearSession() {
   const token = sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TAB_SESSION_KEY) || localStorage.getItem(TOKEN_KEY);
   const phone = currentSession && currentSession.phone;
+  const tabId = currentSession && currentSession.tabId;
+  clearInterval(sessionHeartbeatI); sessionHeartbeatI=null;
+  if(sessionLockUnsub){sessionLockUnsub();sessionLockUnsub=null;}
+  // Cancel the old disconnect handler BEFORE removing the active lock.
+  // Otherwise an old tab closing later can erase a new tab's login.
+  if(phone){
+    try { await rtdb.ref("activeSessions/"+safeKey(phone)).onDisconnect().cancel(); } catch(_){}
+  }
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(TAB_SESSION_KEY);
   localStorage.removeItem(TOKEN_KEY);
@@ -749,7 +808,7 @@ async function clearSession() {
   if (token) { try { await fbDelete("/sessions/" + token); } catch (e) {} }
   if(phone){
     try {
-      await rtdb.ref("activeSessions/"+safeKey(phone)).transaction(cur => cur && cur.token===token ? null : undefined);
+      await rtdb.ref("activeSessions/"+safeKey(phone)).transaction(cur => cur && cur.token===token && (!tabId || cur.tabId===tabId) ? null : undefined);
     } catch(_){}
   }
 }
@@ -764,16 +823,14 @@ async function bootSession() {
     const rec = await fbGet("/sessions/" + token);
     if (rec) {
       const active = await fbGet("/activeSessions/" + safeKey(rec.phone));
-      if (active && active.token !== token) {
+      try {
+        // saveSession() decides whether the existing lock is still alive,
+        // stale, disconnected, or belongs to this exact tab.
+        await saveSession({phone:rec.phone, username:rec.username}, token);
+      } catch (_) {
         sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TAB_SESSION_KEY); localStorage.removeItem(TOKEN_KEY);
         currentSession = null;
-        notif("ئەم هەژمارە لە tab ـێکی تر بەکاردێت", "err");
-      } else {
-        try {
-          await saveSession({phone:rec.phone, username:rec.username}, token);
-        } catch (_) {
-          currentSession = { phone:rec.phone, username:rec.username, token, tabId:rec.tabId||sessionTabId() };
-        }
+        notif("ئەم هەژمارە لە tab ـێکی تر بەکارهێنراوە", "err");
       }
     } else {
       sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TAB_SESSION_KEY); localStorage.removeItem(TOKEN_KEY); currentSession = null;
@@ -783,6 +840,7 @@ async function bootSession() {
     // will reconnect and the account lock is not treated as a logout.
     const cached = sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TAB_SESSION_KEY);
     if(!cached) currentSession = null;
+    else if(currentSession) { startSessionHeartbeat(); watchSessionLock(); }
   }
   applySessionUI();
 }
@@ -900,12 +958,20 @@ async function doLogin() {
     await saveSession({ phone, username: user.username });
     notif("بەخێربێیتەوە " + user.username + " ✓", "suc");
     try { applySessionUI(); } catch (e2) { console.warn(e2); }
+    // Change screen only AFTER the Firebase session claim succeeds, so the
+    // click never appears to do nothing. The dashboard itself may load data
+    // asynchronously, but the navigation is immediate.
     go("s-dashboard");
+    setTimeout(()=>{ if(activeScreenId()!=="s-dashboard" && currentSession) go("s-dashboard"); },0);
     btn.disabled = false; btn.textContent = "چوونەژوورەوە";
     return;
   } catch (e) {
-    if(e && e.code === "ACCOUNT_IN_USE") document.getElementById("loPhoneMsg").textContent = "ئەم هەژمارە لە tab ـێکی تر چووەتە ژوورەوە";
-    else notif("هەڵەیەک ڕوویدا، دووبارە هەوڵبدەوە", "err");
+    if(e && e.code === "ACCOUNT_IN_USE") {
+      document.getElementById("loPhoneMsg").textContent = "⚠️ ئەم هەژمارە لە tab ـێکی تر بەکارهێنراوە. تکایە ئەو tab ـە دابخە یان لەوێ Logout بکە.";
+    } else {
+      document.getElementById("loPhoneMsg").textContent = "⚠️ چوونەژوورەوە سەرکەوتوو نەبوو — تکایە دووبارە هەوڵبدەوە.";
+      console.error("Login failed",e);
+    }
   }
   btn.disabled = false; btn.textContent = "چوونەژوورەوە";
 }
